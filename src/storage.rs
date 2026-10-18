@@ -15,6 +15,7 @@ pub const DAILY_KEY: &str = "nexus2049.daily.state";
 pub const DAILY_HIST_KEY: &str = "nexus2049.daily.history";
 pub const ENDLESS_KEY: &str = "nexus2049.endless.state";
 pub const ENDLESS_BEST_KEY: &str = "nexus2049.endless.best";
+pub const THEME_KEY: &str = "nexus2049.theme";
 
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

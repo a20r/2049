@@ -19,7 +19,7 @@
   --gap: 10px;
   --radius: 8px;
   /* svh keeps the board a fixed size when the mobile address bar collapses. */
-  --board-size: min(92vw, 440px, calc(100svh - 250px));
+  --board-size: min(92vw, 440px, calc(100svh - 312px));
   --move-ms: 140ms;
 
   --font-display: 'Orbitron', 'Segoe UI', system-ui, sans-serif;
@@ -598,6 +598,11 @@ body {
   align-items: stretch;
   gap: 8px;
 }
+.foot-switches {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
 .foot-line {
   margin: 0;
   font-family: var(--font-mono);
@@ -632,7 +637,7 @@ body {
   z-index: 1;
   font-family: var(--font-mono), system-ui, sans-serif;
   font-weight: 400;
-  font-size: clamp(8px, calc(var(--board-size) * 0.031), 11px);
+  font-size: clamp(10px, calc(var(--board-size) * 0.031), 11px);
   letter-spacing: 0.1em;
   line-height: 1.2;
   padding: 1px 5px;
@@ -770,7 +775,7 @@ body {
 }
 
 @media (max-height: 640px) {
-  :root { --board-size: min(92vw, calc(100svh - 215px)); }
+  :root { --board-size: min(92vw, calc(100svh - 275px)); }
   /* In landscape the board is much narrower than the viewport; keep the HUD,
      controls and footer at viewport width and let board-wrap centre the board. */
   .app { width: min(92vw, 440px); gap: 8px; }
@@ -780,5 +785,200 @@ body {
 }
 
 @media (max-height: 480px) {
+  /* Landscape: the switches share a row, so the footer needs less height. */
+  :root { --board-size: min(92vw, calc(100svh - 215px)); }
   .board.collatz .tile .cap { display: none; }
 }
+/* Landscape phones: the two switches share one row so the footer stays one control tall.
+   Short portrait screens keep the stacked layout; a row would clip the labels. */
+@media (max-height: 480px) and (min-width: 480px) {
+  .foot-switches { flex-direction: row; }
+  .foot-switches > .seg { width: auto; }
+  .seg-modes { flex: 3; }
+  .seg-theme { flex: 2; }
+}
+
+/* ---------- Classic theme: a modern take on the original 2048 look ---------- */
+
+:root[data-theme="classic"] {
+  --bg: #faf8ef;
+  --bg-2: #fbf9f2;
+  --panel: #bbada0;
+  --line: rgba(119, 110, 101, 0.18);
+  --cell: rgba(238, 228, 218, 0.42);
+  --cell-line: transparent;
+  --white: #f9f6f2;
+  --text: #776e65;
+  --muted: #6f665e;
+  /* Numeral ink: a warm charcoal that reads on every fill from tan to gold. */
+  --ink: #2b2923;
+  --ink-soft: #5f574f;
+  --radius: 10px;
+  --brown: #776e65;
+  --brown-2: #5f5750;
+  --orange: #c9411f;
+  --orange-2: #b8361a;
+  --font-display: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+[data-theme="classic"] body {
+  background: linear-gradient(180deg, #fbf9f2, #f3eee3);
+  color: var(--text);
+}
+[data-theme="classic"] .rain,
+[data-theme="classic"] .scanlines { display: none; }
+
+[data-theme="classic"] .title {
+  color: var(--text);
+  text-shadow: none;
+  animation: none;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+[data-theme="classic"] .title::before,
+[data-theme="classic"] .title::after { display: none; }
+[data-theme="classic"] .tagline {
+  color: var(--muted);
+  text-shadow: none;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+}
+
+[data-theme="classic"] .score-box {
+  background: #776e65;
+  border: 0;
+  box-shadow: 0 2px 6px rgba(119, 110, 101, 0.18);
+}
+[data-theme="classic"] .score-label { color: #ffffff; font-weight: 600; letter-spacing: 0.18em; }
+[data-theme="classic"] .score-value { color: #ffffff; text-shadow: none; }
+[data-theme="classic"] .score-delta { color: #ffffff; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35); }
+
+[data-theme="classic"] .status-line { color: var(--muted); font-weight: 600; letter-spacing: 0.08em; }
+[data-theme="classic"] .status-line.goal { color: #6b6259; text-shadow: none; }
+[data-theme="classic"] .status-line.warn { color: var(--orange-2); text-shadow: none; }
+
+[data-theme="classic"] .seg {
+  background: #e9e1d5;
+  border: 0;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+[data-theme="classic"] .seg-btn { color: var(--ink-soft); font-weight: 600; letter-spacing: 0.1em; }
+[data-theme="classic"] .seg-btn + .seg-btn { border-left-color: rgba(119, 110, 101, 0.14); }
+[data-theme="classic"] .seg-btn[aria-checked="true"] { background: var(--brown); color: #f9f6f2; text-shadow: none; }
+[data-theme="classic"] .seg-btn.daily[aria-checked="true"] { background: var(--orange); color: #ffffff; text-shadow: none; }
+[data-theme="classic"] .seg-btn:active { background: rgba(119, 110, 101, 0.25); }
+/* The ring is inset, so it must contrast with the segment it sits on: dark on
+   the pale track, light on a checked (brown or orange) segment. */
+[data-theme="classic"] .seg-btn:focus-visible { outline-color: #3c3a32; }
+[data-theme="classic"] .seg-btn[aria-checked="true"]:focus-visible { outline-color: #fbf9f2; }
+
+[data-theme="classic"] .btn {
+  color: #f9f6f2;
+  background: var(--brown);
+  border: 0;
+  box-shadow: 0 2px 6px rgba(119, 110, 101, 0.25);
+  text-shadow: none;
+  letter-spacing: 0.08em;
+}
+[data-theme="classic"] .btn:hover { background: var(--brown-2); }
+[data-theme="classic"] .btn-primary { background: var(--orange); box-shadow: 0 2px 8px rgba(201, 65, 31, 0.35); }
+[data-theme="classic"] .btn-primary:hover { background: var(--orange-2); }
+[data-theme="classic"] .btn:focus-visible {
+  outline: 2px solid #3c3a32;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px #fbf9f2;
+}
+
+[data-theme="classic"] .board,
+[data-theme="classic"] .board.collatz {
+  background: #bbada0;
+  border: 0;
+  box-shadow: 0 12px 30px rgba(119, 110, 101, 0.22);
+}
+[data-theme="classic"] .board.collatz.stuck {
+  box-shadow: 0 0 0 3px var(--orange-2), 0 12px 30px rgba(119, 110, 101, 0.22);
+}
+[data-theme="classic"] .cell { background: var(--cell); border: 0; box-shadow: none; }
+
+/* 2048 tiles: the familiar ramp from pale tan through orange to gold. */
+[data-theme="classic"] .tile {
+  color: var(--text);
+  border: 0;
+  text-shadow: none;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  font-weight: 800;
+}
+[data-theme="classic"] .tile[data-v="2"] { background: #eee4da; color: var(--ink-soft); }
+[data-theme="classic"] .tile[data-v="4"] { background: #ede0c8; color: var(--ink-soft); }
+[data-theme="classic"] .tile[data-v="8"] { background: #f2b179; color: var(--ink); }
+[data-theme="classic"] .tile[data-v="16"] { background: #f59563; color: var(--ink); }
+[data-theme="classic"] .tile[data-v="32"] { background: #f67c5f; color: var(--ink); }
+[data-theme="classic"] .tile[data-v="64"] { background: #f65e3b; color: var(--ink); }
+[data-theme="classic"] .tile[data-v="128"] { background: #edcf72; color: var(--ink); box-shadow: 0 0 24px 6px rgba(243, 215, 116, 0.3); }
+[data-theme="classic"] .tile[data-v="256"] { background: #edcc61; color: var(--ink); box-shadow: 0 0 24px 6px rgba(243, 215, 116, 0.35); }
+[data-theme="classic"] .tile[data-v="512"] { background: #edc850; color: var(--ink); box-shadow: 0 0 24px 6px rgba(243, 215, 116, 0.4); }
+[data-theme="classic"] .tile[data-v="1024"] { background: #edc53f; color: var(--ink); box-shadow: 0 0 28px 8px rgba(243, 215, 116, 0.45); }
+[data-theme="classic"] .tile[data-v="2048"] { background: #edc22e; color: var(--ink); box-shadow: 0 0 32px 10px rgba(243, 215, 116, 0.55); }
+[data-theme="classic"] .tile[data-v="4096"],
+[data-theme="classic"] .tile[data-v="8192"],
+[data-theme="classic"] .tile[data-v="16384"],
+[data-theme="classic"] .tile[data-v="32768"],
+[data-theme="classic"] .tile[data-v="65536"] { background: #3c3a32; color: #f9f6f2; box-shadow: 0 0 24px 6px rgba(60, 58, 50, 0.3); }
+[data-theme="classic"] .tile[data-v="2048"]::before,
+[data-theme="classic"] .tile[data-v="4096"]::before,
+[data-theme="classic"] .tile[data-v="8192"]::before,
+[data-theme="classic"] .tile[data-v="16384"]::before,
+[data-theme="classic"] .tile[data-v="32768"]::before,
+[data-theme="classic"] .tile[data-v="65536"]::before { background: rgba(255, 255, 255, 0.22); }
+[data-theme="classic"] .tile.merged::after,
+[data-theme="classic"] .tile.cleared::after { border-color: rgba(119, 110, 101, 0.45); }
+
+/* Collatz tiles: evens climb the warm ramp, odds sit on a cool blue one, the 1 is gold. */
+[data-theme="classic"] .board.collatz .tile[data-par][data-band],
+[data-theme="classic"] .board.collatz .tile[data-par="one"] {
+  border: 0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  text-shadow: none;
+}
+[data-theme="classic"] .board.collatz .tile[data-par="even"][data-band="0"] { background: #eee4da; color: var(--ink-soft); }
+[data-theme="classic"] .board.collatz .tile[data-par="even"][data-band="1"] { background: #f2b179; color: var(--ink); }
+[data-theme="classic"] .board.collatz .tile[data-par="even"][data-band="2"] { background: #f67c5f; color: var(--ink); }
+[data-theme="classic"] .board.collatz .tile[data-par="even"][data-band="3"] { background: #f65e3b; color: var(--ink); }
+[data-theme="classic"] .board.collatz .tile[data-par="odd"][data-band="0"] { background: #dbe8f3; color: #2f4d68; }
+[data-theme="classic"] .board.collatz .tile[data-par="odd"][data-band="1"] { background: #7fb3df; color: #1a3550; }
+[data-theme="classic"] .board.collatz .tile[data-par="odd"][data-band="2"] { background: #2f72b5; color: #ffffff; }
+[data-theme="classic"] .board.collatz .tile[data-par="odd"][data-band="3"] { background: #1f5a99; color: #ffffff; }
+[data-theme="classic"] .board.collatz .tile[data-par="one"] {
+  background: linear-gradient(145deg, #f3d86b, #edc22e);
+  color: var(--ink);
+  text-shadow: none;
+  box-shadow: 0 0 24px 6px rgba(243, 215, 116, 0.45);
+}
+[data-theme="classic"] .board.collatz .tile[data-par="one"]::before { background: rgba(255, 255, 255, 0.28); }
+/* Captions: a pale chip with dark text on the light and warm tiles, a dark
+   chip with light text on the two deep blues. */
+[data-theme="classic"] .board.collatz .tile .cap,
+[data-theme="classic"] .board.collatz .tile[data-par="even"][data-band="1"] .cap,
+[data-theme="classic"] .board.collatz .tile[data-par="one"] .cap {
+  color: #3c3a32;
+  background: rgba(255, 255, 255, 0.35);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+[data-theme="classic"] .board.collatz .tile[data-par="odd"][data-band="2"] .cap,
+[data-theme="classic"] .board.collatz .tile[data-par="odd"][data-band="3"] .cap {
+  color: #f9f6f2;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+[data-theme="classic"] .overlay { background: rgba(250, 248, 239, 0.88); }
+[data-theme="classic"] .overlay-kicker { color: var(--orange-2); text-shadow: none; font-weight: 700; letter-spacing: 0.2em; }
+[data-theme="classic"] .overlay-title,
+[data-theme="classic"] .overlay.win .overlay-title {
+  color: var(--text);
+  text-shadow: none;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+[data-theme="classic"] .overlay-sub { color: var(--muted); font-weight: 500; letter-spacing: 0.06em; }
