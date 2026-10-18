@@ -158,6 +158,44 @@ struct Pending {
 /// End-of-move work that runs when the slide timer fires or is flushed.
 type Finish = Box<dyn FnOnce(&mut App)>;
 
+/// Visual theme: the Blade Runner neon look, or a modern take on the original 2048.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Theme {
+    Neon,
+    Classic,
+}
+
+impl Theme {
+    fn key(self) -> &'static str {
+        match self {
+            Theme::Neon => "neon",
+            Theme::Classic => "classic",
+        }
+    }
+    fn from_key(s: &str) -> Theme {
+        if s == "classic" {
+            Theme::Classic
+        } else {
+            Theme::Neon
+        }
+    }
+    /// Browser chrome colour (the theme-color meta) for each theme.
+    fn chrome(self) -> &'static str {
+        match self {
+            Theme::Neon => "#07020f",
+            Theme::Classic => "#faf8ef",
+        }
+    }
+    fn other(self) -> Theme {
+        match self {
+            Theme::Neon => Theme::Classic,
+            Theme::Classic => Theme::Neon,
+        }
+    }
+}
+
+const THEMES: [Theme; 2] = [Theme::Neon, Theme::Classic];
+
 struct Els {
     board: HtmlElement,
     tiles: HtmlElement,
@@ -172,6 +210,7 @@ struct Els {
     undo: HtmlButtonElement,
     new_game: HtmlButtonElement,
     mode_btns: [HtmlButtonElement; 4],
+    theme_btns: [HtmlButtonElement; 2],
     overlay: HtmlElement,
     kicker: HtmlElement,
     title: HtmlElement,
@@ -185,6 +224,7 @@ pub struct App {
     me: Weak<RefCell<App>>,
     els: Els,
     mode: Mode,
+    theme: Theme,
     next_id: u32,
     grid: Grid,
     elements: HashMap<u32, HtmlElement>,
@@ -240,6 +280,7 @@ pub fn boot() {
             dom::btn("mode-daily"),
             dom::btn("mode-endless"),
         ],
+        theme_btns: [dom::btn("theme-neon"), dom::btn("theme-classic")],
         overlay: dom::el("overlay"),
         kicker: dom::el("overlay-kicker"),
         title: dom::el("overlay-title"),
@@ -252,6 +293,7 @@ pub fn boot() {
         me: Weak::new(),
         els,
         mode: Mode::Classic,
+        theme: Theme::Neon,
         next_id: 1,
         grid: [[None; SIZE]; SIZE],
         elements: HashMap::new(),
@@ -300,6 +342,8 @@ pub fn boot() {
     a.en_best = dom::local_get(ENDLESS_BEST_KEY)
         .and_then(|s| s.parse().ok())
         .unwrap_or(0);
+    let theme = dom::local_get(THEME_KEY).unwrap_or_default();
+    a.set_theme(Theme::from_key(&theme), true);
     let saved = dom::local_get(MODE_KEY).unwrap_or_default();
     a.set_mode(Mode::from_key(&saved), true);
     // The app lives for the page: keep the Rc alive.
@@ -321,13 +365,14 @@ fn target_is_button(e: &web_sys::Event) -> bool {
 
 fn wire_events(app: &Rc<RefCell<App>>) {
     let doc = dom::document();
-    let (board, undo, new_game, mode_btns, overlay_btns) = {
+    let (board, undo, new_game, mode_btns, theme_btns, overlay_btns) = {
         let a = app.borrow();
         (
             a.els.board.clone(),
             a.els.undo.clone(),
             a.els.new_game.clone(),
             a.els.mode_btns.clone(),
+            a.els.theme_btns.clone(),
             [
                 a.els.primary.clone(),
                 a.els.secondary.clone(),
@@ -455,6 +500,16 @@ fn wire_events(app: &Rc<RefCell<App>>) {
         let mode = MODES[i];
         let cb = Closure::wrap(
             Box::new(move || with_app(&weak, |a| a.set_mode(mode, false))) as Box<dyn FnMut()>,
+        );
+        let _ = b.add_event_listener_with_callback("click", cb.as_ref().unchecked_ref());
+        cb.forget();
+    }
+
+    for (i, b) in theme_btns.iter().enumerate() {
+        let weak = Rc::downgrade(app);
+        let theme = THEMES[i];
+        let cb = Closure::wrap(
+            Box::new(move || with_app(&weak, |a| a.set_theme(theme, false))) as Box<dyn FnMut()>,
         );
         let _ = b.add_event_listener_with_callback("click", cb.as_ref().unchecked_ref());
         cb.forget();
@@ -1769,6 +1824,38 @@ impl App {
         }
     }
 
+    // ---------- theme ----------
+
+    /// Applies a theme: the data-theme attribute the stylesheet keys on, the
+    /// switch state, the browser chrome colour, and the saved preference.
+    fn set_theme(&mut self, t: Theme, boot: bool) {
+        if !boot && t == self.theme {
+            return;
+        }
+        self.theme = t;
+        dom::local_set(THEME_KEY, t.key());
+        let doc = dom::document();
+        if let Some(root) = doc.document_element() {
+            let _ = root.set_attribute("data-theme", t.key());
+        }
+        if let Ok(Some(meta)) = doc.query_selector("meta[name=theme-color]") {
+            let _ = meta.set_attribute("content", t.chrome());
+        }
+        for (i, b) in self.els.theme_btns.iter().enumerate() {
+            let _ = b.set_attribute(
+                "aria-checked",
+                if THEMES[i] == t { "true" } else { "false" },
+            );
+        }
+        if !boot {
+            self.announce(if t == Theme::Classic {
+                "Classic theme."
+            } else {
+                "Neon theme."
+            });
+        }
+    }
+
     // ---------- mode switch ----------
 
     fn set_mode(&mut self, m: Mode, boot: bool) {
@@ -1879,6 +1966,10 @@ impl App {
             (None, "n" | "N") if self.mode.is_puzzle() => {
                 e.prevent_default();
                 self.new_board();
+            }
+            (None, "t" | "T") => {
+                e.prevent_default();
+                self.set_theme(self.theme.other(), false);
             }
             _ => {}
         }
