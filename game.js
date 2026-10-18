@@ -12,6 +12,8 @@
   var CZ_KEY = 'nexus2049.collatz.state';
   var CZ_BEST_KEY = 'nexus2049.collatz.best';
   var CZ_INTRO_KEY = 'nexus2049.collatz.intro';
+  var DAILY_KEY = 'nexus2049.daily.state';
+  var DAILY_HIST_KEY = 'nexus2049.daily.history'; // { 'YYYY-MM-DD': best moves }
 
   var hasCollatz = typeof window.Collatz !== 'undefined';
 
@@ -29,6 +31,7 @@
   var newBtn = document.getElementById('new-game');
   var mode2048Btn = document.getElementById('mode-2048');
   var modeCollatzBtn = document.getElementById('mode-collatz');
+  var modeDailyBtn = document.getElementById('mode-daily');
   var overlayEl = document.getElementById('overlay');
   var overlayKicker = document.getElementById('overlay-kicker');
   var overlayTitle = document.getElementById('overlay-title');
@@ -37,7 +40,7 @@
   var overlaySecondary = document.getElementById('overlay-secondary');
   var overlayAlt = document.getElementById('overlay-alt');
 
-  var mode = '2048';      // '2048' or 'collatz'
+  var mode = '2048';      // '2048', 'collatz' or 'daily'
   var nextId = 1;
   var grid = [];          // grid[row][col] = tile object or null
   var elements = {};      // tile id -> DOM element
@@ -55,8 +58,8 @@
   var over = false;
   var history = null;     // single-step undo snapshot
 
-  // Collatz state
-  var cz = null;          // { level, moves, par, start, undo, undos, stuck, cleared }
+  // Collatz state, shared by the collatz and daily modes
+  var cz = null;          // { level, date, moves, par, start, undo, undos, stuck, cleared }
   var czBest = 0;
 
   var LOSS_LINES = [
@@ -65,6 +68,11 @@
     'RETIREMENT COMPLETE',
     'YOUR INCEPT DATE HAS EXPIRED'
   ];
+
+  // Both Collatz variants share rules, rendering, undo and overlays.
+  function isCz() {
+    return mode === 'collatz' || mode === 'daily';
+  }
 
   // ---------- storage ----------
 
@@ -234,6 +242,7 @@
     return {
       v: 1,
       level: cz.level,
+      date: cz.date,
       moves: cz.moves,
       par: cz.par,
       start: cz.start,
@@ -245,10 +254,14 @@
     };
   }
 
+  function czKey() {
+    return mode === 'daily' ? DAILY_KEY : CZ_KEY;
+  }
+
   function saveCz() {
     var s = serializeCz();
-    memState.collatz = s;
-    safeSet(CZ_KEY, JSON.stringify(s));
+    memState[mode] = s;
+    safeSet(czKey(), JSON.stringify(s));
   }
 
   function applyCz(s) {
@@ -265,6 +278,7 @@
     if (undo.length > UNDO_CAP) undo = undo.slice(undo.length - UNDO_CAP);
     cz = {
       level: Math.floor(s.level),
+      date: typeof s.date === 'string' ? s.date : null,
       moves: typeof s.moves === 'number' ? s.moves : 0,
       par: typeof s.par === 'number' ? s.par : 0,
       start: s.start.slice(),
@@ -277,19 +291,48 @@
     return true;
   }
 
+  // A daily save only counts for the day it was made.
+  function applyCzForMode(s) {
+    if (!applyCz(s)) return false;
+    if (mode === 'daily' && cz.date !== Collatz.dateKey()) return false;
+    return true;
+  }
+
   function loadCz() {
-    if (memState.collatz && applyCz(memState.collatz)) return true;
-    var raw = safeGet(CZ_KEY);
+    if (memState[mode] && applyCzForMode(memState[mode])) return true;
+    var raw = safeGet(czKey());
     if (!raw) return false;
     try {
-      return applyCz(JSON.parse(raw));
+      return applyCzForMode(JSON.parse(raw));
     } catch (e) {
       return false;
     }
   }
 
+  function loadHistory() {
+    try {
+      var h = JSON.parse(safeGet(DAILY_HIST_KEY) || '{}');
+      return (h && typeof h === 'object' && !Array.isArray(h)) ? h : {};
+    } catch (e) {
+      return {};
+    }
+  }
+
+  // Consecutive cleared days ending on `key`.
+  function streakEnding(hist, key) {
+    var parts = key.split('-');
+    var d = new Date(+parts[0], +parts[1] - 1, +parts[2]);
+    var n = 0;
+    while (typeof hist[Collatz.dateKey(d)] === 'number') {
+      n++;
+      d.setDate(d.getDate() - 1);
+      if (n > 10000) break;
+    }
+    return n;
+  }
+
   function saveState() {
-    if (mode === 'collatz') saveCz(); else save2048();
+    if (isCz()) saveCz(); else save2048();
   }
 
   // ---------- 2048 move logic ----------
@@ -367,7 +410,7 @@
     v.className = 'v';
     v.textContent = tile.value;
     el.appendChild(v);
-    if (mode === 'collatz') {
+    if (isCz()) {
       el.dataset.par = tile.value === 1 ? 'one' : (tile.value % 2 ? 'odd' : 'even');
       el.dataset.band = String(bandFor(tile.value));
       el.dataset.len = String(String(tile.value).length);
@@ -408,7 +451,10 @@
   }
 
   function renderScore() {
-    if (mode === 'collatz') {
+    if (mode === 'daily') {
+      scoreEl.textContent = cz ? '#' + cz.level : '';
+      bestEl.textContent = cz ? cz.moves : 0;
+    } else if (mode === 'collatz') {
       scoreEl.textContent = cz ? cz.level : 1;
       bestEl.textContent = cz ? cz.moves : 0;
     } else {
@@ -419,16 +465,24 @@
 
   function renderStatus() {
     var text, cls = '';
-    if (mode === 'collatz' && cz) {
+    if (isCz() && cz) {
       var n = countTiles();
+      var left = n + (n === 1 ? ' TILE LEFT' : ' TILES LEFT');
       if (cz.stuck) {
         text = 'NO PATH · UNDO TO CONTINUE';
         cls = 'warn';
+      } else if (cz.cleared && mode === 'daily') {
+        var hist = loadHistory();
+        text = 'CLEARED IN ' + cz.moves + ' · BEST ' + hist[cz.date] + ' · STREAK ' + streakEnding(hist, cz.date);
+        cls = 'goal';
       } else if (cz.cleared) {
         text = 'BOARD CLEARED · BEST LEVEL ' + czBest;
         cls = 'goal';
+      } else if (mode === 'daily') {
+        text = 'DAILY #' + cz.level + ' · ' + left + ' · PAR ' + cz.par;
+        cls = 'goal';
       } else {
-        text = 'CLEAR THE BOARD · ' + n + (n === 1 ? ' TILE LEFT' : ' TILES LEFT') + ' · PAR ' + cz.par;
+        text = 'CLEAR THE BOARD · ' + left + ' · PAR ' + cz.par;
         cls = 'goal';
       }
     } else {
@@ -447,7 +501,7 @@
   }
 
   function updateUndo() {
-    if (mode === 'collatz') {
+    if (isCz()) {
       undoBtn.disabled = !cz || cz.undo.length === 0;
     } else {
       undoBtn.disabled = !history || over;
@@ -480,7 +534,7 @@
   function showOverlay(opts) {
     overlayEl.hidden = false;
     overlayEl.classList.toggle('win', !!opts.win);
-    overlayEl.classList.toggle('collatz', mode === 'collatz');
+    overlayEl.classList.toggle('collatz', isCz());
     overlayKicker.textContent = opts.kicker || '';
     overlayTitle.textContent = opts.title || '';
     overlaySub.textContent = opts.sub || '';
@@ -644,8 +698,23 @@
 
   // ---------- Collatz game flow ----------
 
-  function startLevel(level, startCells) {
+  // Puts a fresh board on screen and resets the per-board state.
+  function beginBoard(level, date, cells, par) {
     flushMove();
+    cz = { level: level, date: date, moves: 0, par: par, start: cells.slice(), undo: [], undos: 0, stuck: false, cleared: false };
+    grid = gridFromCells(cells);
+    animating = false;
+    queuedDir = null;
+    hideOverlay();
+    boardEl.classList.remove('stuck');
+    renderAll();
+    renderStatus();
+    updateUndo();
+    saveState();
+    announce((mode === 'daily' ? 'Daily board ' + level : 'Level ' + level) + '. ' + countTiles() + ' tiles. Par ' + par + '.');
+  }
+
+  function startLevel(level, startCells) {
     var cells, par;
     if (startCells) {
       cells = startCells.slice();
@@ -656,25 +725,51 @@
       cells = g.cells;
       par = g.par;
     }
-    cz = { level: level, moves: 0, par: par, start: cells.slice(), undo: [], undos: 0, stuck: false, cleared: false };
-    grid = gridFromCells(cells);
-    animating = false;
-    queuedDir = null;
-    hideOverlay();
-    boardEl.classList.remove('stuck');
-    renderAll();
-    renderStatus();
-    updateUndo();
-    saveState();
-    announce('Level ' + level + '. ' + countTiles() + ' tiles. Par ' + par + '.');
+    beginBoard(level, null, cells, par);
+  }
+
+  function startDaily() {
+    var key = Collatz.dateKey();
+    var g = Collatz.daily(key);
+    beginBoard(g.day, key, g.cells, g.par);
+  }
+
+  // The same board again, from the top.
+  function restartBoard() {
+    beginBoard(cz.level, cz.date, cz.start, cz.par);
   }
 
   function retryLevel() {
-    startLevel(cz.level, cz.start);
+    restartBoard();
   }
 
   function newBoard() {
-    startLevel(cz.level);
+    if (mode === 'daily') restartBoard(); else startLevel(cz.level);
+  }
+
+  function shareText() {
+    var tier = tierFor();
+    return '2049 DAILY #' + cz.level + ' · ' + cz.moves + ' MOVES · PAR ' + cz.par + ' · ' + tier + '\n' +
+      location.origin + location.pathname;
+  }
+
+  function shareDaily() {
+    var text = shareText();
+    var btn = overlayPrimary;
+    function done(label) { btn.textContent = label; }
+    if (navigator.share) {
+      navigator.share({ text: text }).then(function () { done('SHARED'); }, function () { /* cancelled */ });
+      return;
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { done('COPIED'); }, function () { done('COPY FAILED'); });
+      return;
+    }
+    window.prompt('Copy your result', text);
+  }
+
+  function tierFor() {
+    return cz.moves <= cz.par ? 'PERFECT' : cz.moves <= cz.par + 2 ? 'CLEAN' : 'CLEARED';
   }
 
   function undoCz() {
@@ -715,28 +810,47 @@
       sub: 'THESE TILES CAN NO LONGER PAIR OFF',
       primary: { label: 'UNDO', action: undoCz },
       secondary: { label: 'RETRY', action: retryLevel },
-      alt: { label: 'NEW BOARD', action: newBoard },
-      announce: 'No path to clear the board. Undo, retry, or take a new board.'
+      alt: mode === 'daily' ? null : { label: 'NEW BOARD', action: newBoard },
+      announce: 'No path to clear the board. Undo, retry' + (mode === 'daily' ? '.' : ', or take a new board.')
     });
   }
 
   function showCleared() {
-    var tier = cz.moves <= cz.par ? 'PERFECT' : cz.moves <= cz.par + 2 ? 'CLEAN' : 'CLEARED';
-    var sub = 'LEVEL ' + cz.level + ' · ' + cz.moves + ' MOVES · PAR ' + cz.par;
-    if (cz.undos) sub += ' · ' + cz.undos + (cz.undos === 1 ? ' UNDO' : ' UNDOS');
-    showOverlay({
-      win: true,
-      kicker: tier,
-      title: 'INTERLINKED',
-      sub: sub,
-      primary: { label: 'NEXT LEVEL', action: function () { startLevel(cz.level + 1); } },
-      announce: 'Level ' + cz.level + ' cleared in ' + cz.moves + ' moves, par ' + cz.par + '.'
-    });
+    var tier = tierFor();
+    var sub, opts;
+    if (mode === 'daily') {
+      var hist = loadHistory();
+      sub = 'DAILY #' + cz.level + ' · ' + cz.moves + ' MOVES · PAR ' + cz.par;
+      if (typeof hist[cz.date] === 'number' && hist[cz.date] < cz.moves) sub += ' · BEST ' + hist[cz.date];
+      var streak = streakEnding(hist, cz.date);
+      if (streak > 1) sub += ' · STREAK ' + streak;
+      opts = {
+        primary: { label: 'SHARE', action: shareDaily },
+        secondary: { label: 'RETRY', action: restartBoard },
+        announce: 'Daily board ' + cz.level + ' cleared in ' + cz.moves + ' moves, par ' + cz.par + '.'
+      };
+    } else {
+      sub = 'LEVEL ' + cz.level + ' · ' + cz.moves + ' MOVES · PAR ' + cz.par;
+      if (cz.undos) sub += ' · ' + cz.undos + (cz.undos === 1 ? ' UNDO' : ' UNDOS');
+      opts = {
+        primary: { label: 'NEXT LEVEL', action: function () { startLevel(cz.level + 1); } },
+        announce: 'Level ' + cz.level + ' cleared in ' + cz.moves + ' moves, par ' + cz.par + '.'
+      };
+    }
+    opts.win = true;
+    opts.kicker = tier;
+    opts.title = 'INTERLINKED';
+    opts.sub = sub;
+    showOverlay(opts);
   }
 
   function levelCleared() {
     cz.cleared = true;
-    if (cz.level > czBest) {
+    if (mode === 'daily') {
+      var hist = loadHistory();
+      if (typeof hist[cz.date] !== 'number' || cz.moves < hist[cz.date]) hist[cz.date] = cz.moves;
+      safeSet(DAILY_HIST_KEY, JSON.stringify(hist));
+    } else if (cz.level > czBest) {
       czBest = cz.level;
       safeSet(CZ_BEST_KEY, String(czBest));
     }
@@ -842,21 +956,22 @@
     if (!overlayEl.hidden) return;
     if (mode === '2048' && over) return;
     if (animating) { queuedDir = dir; return; }
-    if (mode === 'collatz') handleMoveCz(dir); else handleMove2048(dir);
+    if (isCz()) handleMoveCz(dir); else handleMove2048(dir);
   }
 
   function undo() {
-    if (mode === 'collatz') undoCz(); else undo2048();
+    if (isCz()) undoCz(); else undo2048();
   }
 
   function primaryAction() {
-    if (mode === 'collatz') newBoard(); else newGame();
+    if (isCz()) newBoard(); else newGame();
   }
 
   // ---------- mode switch ----------
 
   function setMode(m, boot) {
-    if (m === 'collatz' && !hasCollatz) m = '2048';
+    if (m !== 'collatz' && m !== 'daily') m = '2048';
+    if (m !== '2048' && !hasCollatz) m = '2048';
     if (!boot) {
       if (m === mode) return;
       flushMove();
@@ -867,22 +982,26 @@
     animating = false;
     queuedDir = null;
 
-    var isCz = m === 'collatz';
-    mode2048Btn.setAttribute('aria-checked', isCz ? 'false' : 'true');
-    modeCollatzBtn.setAttribute('aria-checked', isCz ? 'true' : 'false');
-    boardEl.classList.toggle('collatz', isCz);
+    var czMode = isCz();
+    var daily = m === 'daily';
+    mode2048Btn.setAttribute('aria-checked', m === '2048' ? 'true' : 'false');
+    modeCollatzBtn.setAttribute('aria-checked', m === 'collatz' ? 'true' : 'false');
+    modeDailyBtn.setAttribute('aria-checked', daily ? 'true' : 'false');
+    boardEl.classList.toggle('collatz', czMode);
     boardEl.classList.remove('stuck');
-    taglineEl.textContent = isCz ? 'CELLS INTERLINKED' : 'MORE HUMAN THAN HUMAN';
-    scoreLabelEl.textContent = isCz ? 'LEVEL' : 'SCORE';
-    bestLabelEl.textContent = isCz ? 'MOVES' : 'BEST';
-    newBtn.textContent = isCz ? 'NEW BOARD' : 'NEW RUN';
+    taglineEl.textContent = daily ? 'DAILY BASELINE TEST' : czMode ? 'CELLS INTERLINKED' : 'MORE HUMAN THAN HUMAN';
+    scoreLabelEl.textContent = daily ? 'DAY' : czMode ? 'LEVEL' : 'SCORE';
+    bestLabelEl.textContent = czMode ? 'MOVES' : 'BEST';
+    newBtn.textContent = daily ? 'RETRY' : czMode ? 'NEW BOARD' : 'NEW RUN';
     hideOverlay();
 
-    if (isCz) {
+    if (czMode) {
       if (loadCz()) {
         renderAll();
         if (cz.cleared) showCleared();
         else if (cz.stuck) showStuck();
+      } else if (daily) {
+        startDaily();
       } else {
         startLevel(1);
       }
@@ -913,7 +1032,7 @@
     if (dir === undefined) {
       if ((e.key === 'z' || e.key === 'Z') && !e.shiftKey) { undo(); e.preventDefault(); }
       if (e.key === 'r' || e.key === 'R') {
-        if (mode === 'collatz') retryLevel(); else newGame();
+        if (isCz()) retryLevel(); else newGame();
         e.preventDefault();
       }
       if (e.key === 'n' || e.key === 'N') { primaryAction(); e.preventDefault(); }
@@ -982,11 +1101,15 @@
   newBtn.addEventListener('click', primaryAction);
   mode2048Btn.addEventListener('click', function () { setMode('2048'); });
   modeCollatzBtn.addEventListener('click', function () { setMode('collatz'); });
-  if (!hasCollatz) modeCollatzBtn.disabled = true;
+  modeDailyBtn.addEventListener('click', function () { setMode('daily'); });
+  if (!hasCollatz) {
+    modeCollatzBtn.disabled = true;
+    modeDailyBtn.disabled = true;
+  }
 
   // ---------- boot ----------
 
   best = parseInt(safeGet(BEST_KEY), 10) || 0;
   czBest = parseInt(safeGet(CZ_BEST_KEY), 10) || 0;
-  setMode(safeGet(MODE_KEY) === 'collatz' ? 'collatz' : '2048', true);
+  setMode(safeGet(MODE_KEY) || '2048', true);
 })();

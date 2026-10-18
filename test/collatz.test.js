@@ -146,6 +146,22 @@ var g1 = Collatz.generate(1, rng);
 assert.deepStrictEqual(g1.cells, Collatz.LEVEL_ONE);
 assert.strictEqual(g1.par, one.moves.length);
 
+// ---------- daily ----------
+assert.strictEqual(Collatz.dayNumber('2026-10-18'), 1);
+assert.strictEqual(Collatz.dayNumber('2026-10-19'), 2);
+assert.strictEqual(Collatz.dayNumber('2027-01-01'), 76);
+assert.ok(/^\d{4}-\d{2}-\d{2}$/.test(Collatz.dateKey()));
+assert.strictEqual(Collatz.dateKey(new Date(2026, 0, 5)), '2026-01-05');
+var d1 = Collatz.daily('2026-10-18'), d2 = Collatz.daily('2026-10-18'), d3 = Collatz.daily('2026-10-19');
+assert.deepStrictEqual(d1.cells, d2.cells, 'same date gives the same board');
+assert.notDeepStrictEqual(d1.cells, d3.cells, 'different dates give different boards');
+assert.strictEqual(d1.day, 1);
+assert.strictEqual(Collatz.countTiles(d1.cells), 12);
+assert.ok(d1.par > 0 && Collatz.solve(d1.cells).moves.length === d1.par, 'daily par is exact');
+var dailyPars = [];
+for (var dd = 1; dd <= 31; dd++) dailyPars.push(Collatz.daily('2026-12-' + (dd < 10 ? '0' : '') + dd).par);
+console.log('daily par, Dec 2026: min ' + Math.min.apply(null, dailyPars) + ' mean ' + (dailyPars.reduce(function (x, y) { return x + y; }, 0) / 31).toFixed(1) + ' max ' + Math.max.apply(null, dailyPars));
+
 console.log('assertions passed. level one par = ' + one.moves.length + ', moves = ' + one.moves.join(''));
 console.log('');
 console.log('level | tiles | boards | par min/mean/max | odd tiles % | boards with odd % | max value | regens mean | ms mean | ms max');

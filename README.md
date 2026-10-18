@@ -6,7 +6,7 @@ A Blade Runner themed 2048 clone. Static site, no build step, tuned for mobile.
 
 Swipe on the board or use the arrow keys (WASD and HJKL also work).
 
-Two modes, switched with the control between UNDO and NEW RUN:
+Three modes, switched with the control under the board:
 
 - **2048**: merge matching tiles until you reach 2048. `Z` undoes the last move,
   `R` starts a new run.
@@ -15,10 +15,13 @@ Two modes, switched with the control between UNDO and NEW RUN:
   Boards are generated to be solvable and PAR is the exact shortest solution.
   The game tells you the moment a position can no longer be cleared. `Z` undoes
   (full history within a level), `R` retries the same board, `N` deals a new one.
+- **Daily**: one Collatz board per calendar day, the same for everyone, seeded
+  from the date. Your best move count for the day and your streak of cleared
+  days are kept, and SHARE copies a one-line result.
 
 ## Files
 
-- `index.html`, `style.css`, `game.js`: the game and both modes' UI.
+- `index.html`, `style.css`, `game.js`: the game and all three modes' UI.
 - `collatz.js`: Collatz rules, exact solver and board generator (pure, no DOM).
 - `test/collatz.test.js`: engine tests and generator statistics (`node test/collatz.test.js`).
 - `favicon.svg`: tab icon.

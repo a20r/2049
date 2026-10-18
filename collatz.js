@@ -457,6 +457,54 @@
     return bestBoard;
   }
 
+  // ---------- daily board ----------
+  // A deterministic PRNG seeded from the date gives everyone the same board.
+
+  function hashString(s) {
+    var h = 2166136261;
+    for (var i = 0; i < s.length; i++) {
+      h ^= s.charCodeAt(i);
+      h = Math.imul(h, 16777619);
+    }
+    return h >>> 0;
+  }
+
+  // mulberry32; seed is a string or a number
+  function seededRng(seed) {
+    var a = (typeof seed === 'number' ? seed : hashString(String(seed))) >>> 0;
+    return function () {
+      a = (a + 0x6D2B79F5) >>> 0;
+      var t = a;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  var DAILY_LEVEL = 8;
+  var DAILY_EPOCH = Date.UTC(2026, 9, 18); // day 1
+
+  // Local calendar date as 'YYYY-MM-DD'. Pass a Date to format a specific day.
+  function dateKey(d) {
+    d = d || new Date();
+    var m = d.getMonth() + 1, day = d.getDate();
+    return d.getFullYear() + '-' + (m < 10 ? '0' : '') + m + '-' + (day < 10 ? '0' : '') + day;
+  }
+
+  function dayNumber(key) {
+    var p = key.split('-');
+    var t = Date.UTC(+p[0], +p[1] - 1, +p[2]);
+    return Math.floor((t - DAILY_EPOCH) / 86400000) + 1;
+  }
+
+  // The board for a date key. Same key, same code, same board everywhere.
+  function daily(key) {
+    var g = generate(DAILY_LEVEL, seededRng('2049-daily-' + key), { candidates: 3 });
+    g.day = dayNumber(key);
+    g.date = key;
+    return g;
+  }
+
   var Collatz = {
     f: f,
     dist: dist,
@@ -468,6 +516,10 @@
     solve: solve,
     params: params,
     generate: generate,
+    daily: daily,
+    dateKey: dateKey,
+    dayNumber: dayNumber,
+    seededRng: seededRng,
     SIZE: SIZE,
     LEVEL_ONE: LEVEL_ONE,
     // internals exposed for tests

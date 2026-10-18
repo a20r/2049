@@ -225,9 +225,25 @@ body {
   gap: 8px;
 }
 
+/* Goal line between the two buttons */
+.status-line {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  line-height: 1.35;
+  color: var(--muted);
+  transition: color 0.2s ease;
+}
+.status-line.goal { color: var(--cyan); text-shadow: 0 0 8px rgba(0, 240, 255, 0.6); }
+.status-line.warn { color: var(--pink); text-shadow: 0 0 8px rgba(255, 43, 214, 0.7); }
+
 /* Mode switch */
 .seg {
-  flex: 1;
+  width: 100%;
   display: flex;
   min-height: 44px;
   border: 1px solid var(--line);
@@ -239,13 +255,14 @@ body {
   appearance: none;
   flex: 1;
   min-width: 0;
+  min-height: 44px;
   padding: 0 4px;
   border: 0;
   background: transparent;
   color: var(--muted);
   font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.12em;
+  font-size: 11px;
+  letter-spacing: 0.16em;
   cursor: pointer;
   touch-action: manipulation;
   user-select: none;
@@ -259,6 +276,12 @@ body {
   text-shadow: 0 0 6px rgba(0, 240, 255, 0.8);
 }
 .seg-btn:active { background: rgba(0, 240, 255, 0.22); }
+.seg-btn.daily[aria-checked="true"] {
+  color: var(--pink-2);
+  background: rgba(255, 43, 214, 0.14);
+  text-shadow: 0 0 6px rgba(255, 43, 214, 0.8);
+}
+.seg-btn:disabled { opacity: 0.35; cursor: default; }
 
 .btn {
   appearance: none;
@@ -566,18 +589,9 @@ body {
   text-align: center;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  align-items: stretch;
+  gap: 8px;
 }
-.status-line {
-  margin: 0;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.18em;
-  color: var(--muted);
-  transition: color 0.2s ease;
-}
-.status-line.goal { color: var(--cyan); text-shadow: 0 0 8px rgba(0, 240, 255, 0.6); }
-.status-line.warn { color: var(--pink); text-shadow: 0 0 8px rgba(255, 43, 214, 0.7); }
 .foot-line {
   margin: 0;
   font-family: var(--font-mono);
