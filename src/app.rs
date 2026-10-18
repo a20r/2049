@@ -1833,7 +1833,10 @@ impl App {
             return;
         }
         self.theme = t;
-        dom::local_set(THEME_KEY, t.key());
+        // Boot only reflects a stored choice; a first visit stays unwritten.
+        if !boot {
+            dom::local_set(THEME_KEY, t.key());
+        }
         let doc = dom::document();
         if let Some(root) = doc.document_element() {
             let _ = root.set_attribute("data-theme", t.key());
@@ -1967,7 +1970,8 @@ impl App {
                 e.prevent_default();
                 self.new_board();
             }
-            (None, "t" | "T") => {
+            // Key repeat would strobe the page while T is held.
+            (None, "t" | "T") if !e.repeat() => {
                 e.prevent_default();
                 self.set_theme(self.theme.other(), false);
             }
