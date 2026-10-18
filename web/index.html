@@ -7,13 +7,14 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="description" content="2049: a Blade Runner themed 2048, plus a Collatz mode where equal tiles follow 3n+1 or n/2 and the goal is to clear the board, with a new daily board every day.">
+  <meta name="description" content="2049: a Blade Runner themed 2048, plus Collatz, daily and endless modes where equal tiles follow 3n+1 or n/2. Rust and WebAssembly.">
   <title>2049</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=4">
+  <link rel="stylesheet" href="style.css?v=5">
+  <link rel="modulepreload" href="pkg/nexus2049.js?v=5">
 </head>
 <body>
   <div class="rain" aria-hidden="true"></div>
@@ -73,12 +74,16 @@
         <button class="seg-btn" id="mode-2048" type="button" role="radio" aria-checked="true">2048</button>
         <button class="seg-btn" id="mode-collatz" type="button" role="radio" aria-checked="false">COLLATZ</button>
         <button class="seg-btn daily" id="mode-daily" type="button" role="radio" aria-checked="false">DAILY</button>
+        <button class="seg-btn endless" id="mode-endless" type="button" role="radio" aria-checked="false">ENDLESS</button>
       </div>
       <p class="foot-line">TYRELL CORP. &middot; NEXUS SERIES &middot; LOS ANGELES 2049</p>
     </footer>
   </main>
 
-  <script src="collatz.js?v=4"></script>
-  <script src="game.js?v=4"></script>
+  <script type="module">
+    import init, * as nexus from './pkg/nexus2049.js?v=5';
+    window.Nexus = nexus;
+    init().catch(function (e) { console.error('2049 failed to start', e); });
+  </script>
 </body>
 </html>

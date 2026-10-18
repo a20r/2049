@@ -1,0 +1,54 @@
+[workspace]
+members = ["engine"]
+
+[package]
+name = "nexus2049"
+version = "0.2.0"
+edition = "2021"
+publish = false
+description = "2049: a Blade Runner themed 2048 with Collatz, daily and endless modes, in Rust and WebAssembly"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+nexus-engine = { path = "engine" }
+wasm-bindgen = "0.2.129"
+wasm-bindgen-futures = "0.4"
+js-sys = "0.3"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+console_error_panic_hook = "0.1"
+
+[dependencies.web-sys]
+version = "0.3"
+features = [
+  "AddEventListenerOptions",
+  "Clipboard",
+  "CssStyleDeclaration",
+  "Document",
+  "DomTokenList",
+  "Element",
+  "Event",
+  "EventTarget",
+  "HtmlElement",
+  "HtmlButtonElement",
+  "KeyboardEvent",
+  "Location",
+  "MouseEvent",
+  "Navigator",
+  "Node",
+  "ShareData",
+  "Storage",
+  "Touch",
+  "TouchEvent",
+  "TouchList",
+  "Window",
+  "console",
+]
+
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+panic = "abort"
