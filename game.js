@@ -49,6 +49,7 @@
   var moveTimer = null;
   var pendingFinish = null; // the function the move timer will run
   var memState = {};      // in-memory saves per mode, so a mode switch is lossless
+  var introOpen = false;  // the one-time rules overlay is on screen
 
   // 2048 state
   var score = 0;
@@ -531,7 +532,15 @@
     btn.onclick = spec.action;
   }
 
+  // Anything that takes the intro off screen counts as having read it.
+  function dismissIntro() {
+    if (!introOpen) return;
+    introOpen = false;
+    safeSet(CZ_INTRO_KEY, '1');
+  }
+
   function showOverlay(opts) {
+    dismissIntro();
     overlayEl.hidden = false;
     overlayEl.classList.toggle('win', !!opts.win);
     overlayEl.classList.toggle('collatz', isCz());
@@ -542,10 +551,16 @@
     setOverlayBtn(overlayPrimary, opts.primary);
     setOverlayBtn(overlaySecondary, opts.secondary);
     setOverlayBtn(overlayAlt, opts.alt);
+    // DOM order follows visual order so tab order matches: Collatz overlays
+    // lead with the primary action, 2048 overlays end with it.
+    var actions = overlayPrimary.parentNode;
+    var order = isCz() ? [overlayPrimary, overlaySecondary, overlayAlt] : [overlaySecondary, overlayAlt, overlayPrimary];
+    order.forEach(function (b) { actions.appendChild(b); });
     if (opts.announce) announce(opts.announce);
   }
 
   function hideOverlay() {
+    dismissIntro();
     overlayEl.hidden = true;
   }
 
@@ -714,14 +729,15 @@
     announce((mode === 'daily' ? 'Daily board ' + level : 'Level ' + level) + '. ' + countTiles() + ' tiles. Par ' + par + '.');
   }
 
-  function startLevel(level, startCells) {
+  // redeal: an explicit NEW BOARD, which on level 1 skips the fixed teaching board.
+  function startLevel(level, startCells, redeal) {
     var cells, par;
     if (startCells) {
       cells = startCells.slice();
       var sol = Collatz.solve(cells);
       par = sol.solved ? sol.moves.length : 0;
     } else {
-      var g = Collatz.generate(level);
+      var g = Collatz.generate(level, null, redeal ? { fixed: false } : null);
       cells = g.cells;
       par = g.par;
     }
@@ -743,8 +759,11 @@
     restartBoard();
   }
 
+  // After a clear, NEW BOARD means the next level, same as the overlay button.
   function newBoard() {
-    if (mode === 'daily') restartBoard(); else startLevel(cz.level);
+    if (mode === 'daily') restartBoard();
+    else if (cz.cleared) startLevel(cz.level + 1);
+    else startLevel(cz.level, null, true);
   }
 
   function shareText() {
@@ -797,9 +816,10 @@
       title: 'COLLATZ',
       sub: 'PAIR EQUAL TILES. EVEN HALVES. ODD BECOMES 3N+1. PAIR 1s TO CLEAR. EMPTY THE BOARD.',
       wide: true,
-      primary: { label: 'BEGIN', action: function () { safeSet(CZ_INTRO_KEY, '1'); hideOverlay(); } },
+      primary: { label: 'BEGIN', action: hideOverlay },
       announce: 'Collatz mode. Pair equal tiles: even halves, odd becomes 3n plus 1, two 1s clear. Empty the board.'
     });
+    introOpen = true;
   }
 
   function showStuck() {
@@ -1005,7 +1025,8 @@
       } else {
         startLevel(1);
       }
-      if (!safeGet(CZ_INTRO_KEY)) showIntro();
+      // Never cover a restored cleared or stuck overlay with the intro.
+      if (overlayEl.hidden && !safeGet(CZ_INTRO_KEY)) showIntro();
     } else {
       if (load2048()) {
         renderAll();
@@ -1035,7 +1056,8 @@
         if (isCz()) retryLevel(); else newGame();
         e.preventDefault();
       }
-      if (e.key === 'n' || e.key === 'N') { primaryAction(); e.preventDefault(); }
+      // N is a Collatz shortcut only; 2048 keeps its Z and R contract.
+      if ((e.key === 'n' || e.key === 'N') && isCz()) { newBoard(); e.preventDefault(); }
       return;
     }
     e.preventDefault();

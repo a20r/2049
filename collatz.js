@@ -422,7 +422,8 @@
         if (Object.prototype.hasOwnProperty.call(opts, key)) p[key] = opts[key];
       }
     }
-    if (p.level === 1 && !opts) {
+    // opts.fixed === false asks for a random level 1 board (an explicit re-deal).
+    if (p.level === 1 && !(opts && opts.fixed === false)) {
       var fixed = LEVEL_ONE.slice();
       var sol = solve(fixed, p.maxNodes);
       return { cells: fixed, par: sol.moves.length, moves: sol.moves, values: fixed.filter(function (v) { return v > 0; }), attempts: 1, nodes: sol.nodes, peakNodes: sol.nodes, regens: 0 };
@@ -433,9 +434,11 @@
       var board = null;
       while (!board) {
         // Relax the constraints rather than loop forever if a parameter set
-        // turns out to be hard to satisfy.
+        // turns out to be hard to satisfy. A null multiset means the value
+        // ceiling is too low for the tile count, so raise it.
         if (regens >= p.maxRegens) { p.minOdd = 0; p.pDeep = 0; }
         var values = buildValues(p, rng);
+        if (!values && regens >= p.maxRegens) p.maxValue *= 2;
         if (values && countOdd(values) >= p.minOdd) {
           for (var a = 0; a < p.placements && !board; a++) {
             var cells = place(values, rng);

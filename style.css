@@ -276,6 +276,11 @@ body {
   text-shadow: 0 0 6px rgba(0, 240, 255, 0.8);
 }
 .seg-btn:active { background: rgba(0, 240, 255, 0.22); }
+/* Drawn inside the clipped control so the ring is never cut off. */
+.seg-btn:focus-visible {
+  outline: 2px solid var(--white);
+  outline-offset: -4px;
+}
 .seg-btn.daily[aria-checked="true"] {
   color: var(--pink-2);
   background: rgba(255, 43, 214, 0.14);
@@ -295,6 +300,7 @@ body {
   border-radius: var(--radius);
   padding: 10px 14px;
   min-height: 44px;
+  white-space: nowrap;
   cursor: pointer;
   box-shadow: 0 0 10px rgba(0, 240, 255, 0.35), inset 0 0 8px rgba(0, 240, 255, 0.1);
   text-shadow: 0 0 6px rgba(0, 240, 255, 0.8);
@@ -620,15 +626,25 @@ body {
   gap: 1px;
   line-height: 1;
 }
+/* The caption sits on a translucent chip so it stays readable on every band. */
 .board.collatz .tile .cap {
   position: relative;
   z-index: 1;
   font-family: var(--font-mono), system-ui, sans-serif;
   font-weight: 400;
-  font-size: 11px;
+  font-size: clamp(8px, calc(var(--board-size) * 0.031), 11px);
   letter-spacing: 0.1em;
-  opacity: 0.85;
+  line-height: 1.2;
+  padding: 1px 5px;
+  border-radius: 4px;
+  color: var(--white);
+  background: rgba(10, 0, 30, 0.55);
   text-shadow: none;
+}
+.board.collatz .tile[data-par="even"][data-band="1"] .cap,
+.board.collatz .tile[data-par="one"] .cap {
+  color: #04101c;
+  background: rgba(255, 255, 255, 0.5);
 }
 .board.collatz .tile[data-len="3"] { font-size: calc(var(--board-size) * 0.072); }
 .board.collatz .tile[data-len="4"] { font-size: calc(var(--board-size) * 0.06); }
@@ -732,8 +748,6 @@ body {
   100% { transform: translate3d(calc(var(--x) * (100% + var(--gap))), calc(var(--y) * (100% + var(--gap))), 0) scale(1.5); opacity: 0; }
 }
 
-/* Collatz overlays put the primary action first. */
-.overlay.collatz .btn-primary { order: -1; }
 .overlay-sub.wide { max-width: 34ch; line-height: 1.6; }
 
 .sr-only {
@@ -748,15 +762,23 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .rain::before, .title, .title::before, .title::after, .tile::before { animation: none; }
+  /* !important so these win over the more specific tile rules above. */
+  .rain::before, .title, .title::before, .title::after,
+  .tile::before, .tile::after, .tile.merged, .tile.new { animation: none !important; }
   .tile { transition-duration: 1ms; }
-  .tile.cleared { animation-duration: 1ms; }
+  .tile.cleared { animation-duration: 1ms !important; }
 }
 
 @media (max-height: 640px) {
   :root { --board-size: min(92vw, calc(100svh - 215px)); }
+  /* In landscape the board is much narrower than the viewport; keep the HUD,
+     controls and footer at viewport width and let board-wrap centre the board. */
+  .app { width: min(92vw, 440px); gap: 8px; }
   .title { font-size: 34px; }
   .tagline { display: none; }
   .foot-line { display: none; }
-  .app { gap: 8px; }
+}
+
+@media (max-height: 480px) {
+  .board.collatz .tile .cap { display: none; }
 }
