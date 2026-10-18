@@ -3,7 +3,7 @@
 
   var SIZE = 4;
   var WIN_VALUE = 2048;
-  var MOVE_MS = 110;
+  var MOVE_MS = 150; // slightly longer than the CSS slide so the swap lands after it
   var STORAGE_KEY = 'nexus2049.state';
   var BEST_KEY = 'nexus2049.best';
 
@@ -31,6 +31,7 @@
   var over = false;
   var history = null;     // single-step undo snapshot
   var animating = false;
+  var queuedDir = null;   // one move buffered while a slide is in flight
   var elements = {};      // tile id -> DOM element
 
   var LOSS_LINES = [
@@ -318,6 +319,7 @@
     over = false;
     history = null;
     animating = false;
+    queuedDir = null;
     hideOverlay();
     addRandomTile();
     addRandomTile();
@@ -331,6 +333,7 @@
     if (!history || animating) return;
     restore(history);
     history = null;
+    queuedDir = null;
     hideOverlay();
     renderAll();
     updateUndo();
@@ -339,8 +342,8 @@
   }
 
   function handleMove(dir) {
-    if (animating || over) return;
-    if (!overlayEl.hidden) return;
+    if (over || !overlayEl.hidden) return;
+    if (animating) { queuedDir = dir; return; }
 
     var snap = snapshot();
     var result = move(dir);
@@ -404,6 +407,12 @@
       animating = false;
       updateUndo();
       saveState();
+
+      if (queuedDir !== null) {
+        var next = queuedDir;
+        queuedDir = null;
+        handleMove(next);
+      }
     }, MOVE_MS);
   }
 
@@ -434,14 +443,24 @@
   function onStart(x, y) {
     touchStartX = x; touchStartY = y; touching = true;
   }
-  function onEnd(x, y) {
-    if (!touching) return;
-    touching = false;
+  // Returns a direction once the gesture passes the threshold, otherwise null.
+  function swipeDir(x, y) {
     var dx = x - touchStartX, dy = y - touchStartY;
     var ax = Math.abs(dx), ay = Math.abs(dy);
-    if (Math.max(ax, ay) < SWIPE_MIN) return;
-    if (ax > ay) handleMove(dx > 0 ? 1 : 3);
-    else handleMove(dy > 0 ? 2 : 0);
+    if (Math.max(ax, ay) < SWIPE_MIN) return null;
+    if (ax > ay) return dx > 0 ? 1 : 3;
+    return dy > 0 ? 2 : 0;
+  }
+  function onMove(x, y) {
+    if (!touching) return;
+    var dir = swipeDir(x, y);
+    if (dir === null) return;
+    touching = false;
+    handleMove(dir);
+  }
+  function onEnd(x, y) {
+    onMove(x, y);
+    touching = false;
   }
 
   boardEl.addEventListener('touchstart', function (e) {
@@ -451,7 +470,10 @@
   }, { passive: true });
 
   boardEl.addEventListener('touchmove', function (e) {
-    if (touching) e.preventDefault();
+    if (!touching) return;
+    e.preventDefault();
+    // Fire as soon as the swipe is unambiguous so the slide starts under the finger.
+    if (e.touches.length === 1) onMove(e.touches[0].clientX, e.touches[0].clientY);
   }, { passive: false });
 
   boardEl.addEventListener('touchend', function (e) {

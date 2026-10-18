@@ -18,7 +18,9 @@
 
   --gap: 10px;
   --radius: 8px;
-  --board-size: min(92vw, 440px, calc(100dvh - 250px));
+  /* svh keeps the board a fixed size when the mobile address bar collapses. */
+  --board-size: min(92vw, 440px, calc(100svh - 250px));
+  --move-ms: 140ms;
 
   --font-display: 'Orbitron', 'Segoe UI', system-ui, sans-serif;
   --font-mono: 'Share Tech Mono', 'SFMono-Regular', Menlo, monospace;
@@ -48,22 +50,32 @@ body {
   overflow-x: hidden;
 }
 
-/* Rain streaks */
+/* Rain streaks: a double-height layer scrolled with transform so it stays on the compositor. */
 .rain {
   position: fixed;
   inset: 0;
   pointer-events: none;
   z-index: 0;
   opacity: 0.35;
+  overflow: hidden;
+}
+.rain::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 200%;
   background-image:
     repeating-linear-gradient(100deg, transparent 0 18px, rgba(0, 240, 255, 0.07) 18px 19px, transparent 19px 41px),
     repeating-linear-gradient(100deg, transparent 0 29px, rgba(255, 43, 214, 0.06) 29px 30px, transparent 30px 63px);
-  background-size: 100% 200%;
+  background-size: 100% 50%;
+  will-change: transform;
   animation: rain 2.6s linear infinite;
 }
 @keyframes rain {
-  from { background-position: 0 0, 0 0; }
-  to { background-position: 0 100%, 0 100%; }
+  from { transform: translate3d(0, -50%, 0); }
+  to { transform: translate3d(0, 0, 0); }
 }
 
 .scanlines {
@@ -71,8 +83,7 @@ body {
   inset: 0;
   pointer-events: none;
   z-index: 0;
-  background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.18) 0 2px, transparent 2px 4px);
-  mix-blend-mode: multiply;
+  background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.16) 0 2px, transparent 2px 4px);
 }
 
 .app {
@@ -84,7 +95,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  min-height: 100dvh;
+  min-height: 100svh;
   justify-content: center;
 }
 
@@ -121,14 +132,12 @@ body {
 .title::before {
   color: var(--cyan);
   transform: translate(-2px, 0);
-  mix-blend-mode: screen;
   text-shadow: 0 0 8px var(--cyan);
   animation: glitchA 5s infinite steps(1);
 }
 .title::after {
   color: var(--pink);
   transform: translate(2px, 0);
-  mix-blend-mode: screen;
   text-shadow: 0 0 8px var(--pink);
   animation: glitchB 5s infinite steps(1);
 }
@@ -175,7 +184,6 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  backdrop-filter: blur(6px);
 }
 .score-label {
   font-family: var(--font-mono);
@@ -327,9 +335,10 @@ body {
   font-size: calc(var(--board-size) * 0.085);
   line-height: 1;
   color: var(--white);
-  transform: translate(calc(var(--x) * (100% + var(--gap))), calc(var(--y) * (100% + var(--gap))));
-  transition: transform 110ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  transform: translate3d(calc(var(--x) * (100% + var(--gap))), calc(var(--y) * (100% + var(--gap))), 0);
+  transition: transform var(--move-ms) cubic-bezier(0.25, 0.1, 0.25, 1);
   will-change: transform;
+  backface-visibility: hidden;
   z-index: 2;
   font-variant-numeric: tabular-nums;
 }
@@ -337,8 +346,8 @@ body {
   position: relative;
   z-index: 1;
 }
-.tile.new { animation: appear 160ms cubic-bezier(0.2, 0.8, 0.2, 1); }
-.tile.merged { animation: pop 200ms cubic-bezier(0.2, 0.8, 0.2, 1); z-index: 3; }
+.tile.new { animation: appear 180ms cubic-bezier(0.25, 0.1, 0.25, 1); }
+.tile.merged { animation: pop 220ms cubic-bezier(0.25, 0.1, 0.25, 1); z-index: 3; }
 .tile.merged::after {
   content: '';
   position: absolute;
@@ -350,13 +359,14 @@ body {
   pointer-events: none;
 }
 @keyframes appear {
-  0% { transform: translate(calc(var(--x) * (100% + var(--gap))), calc(var(--y) * (100% + var(--gap)))) scale(0); opacity: 0; }
-  100% { transform: translate(calc(var(--x) * (100% + var(--gap))), calc(var(--y) * (100% + var(--gap)))) scale(1); opacity: 1; }
+  0% { transform: translate3d(calc(var(--x) * (100% + var(--gap))), calc(var(--y) * (100% + var(--gap))), 0) scale(0.4); opacity: 0; }
+  100% { transform: translate3d(calc(var(--x) * (100% + var(--gap))), calc(var(--y) * (100% + var(--gap))), 0) scale(1); opacity: 1; }
 }
+/* Starts at full size so the swap from the two source tiles has no visible snap. */
 @keyframes pop {
-  0% { transform: translate(calc(var(--x) * (100% + var(--gap))), calc(var(--y) * (100% + var(--gap)))) scale(0.6); }
-  55% { transform: translate(calc(var(--x) * (100% + var(--gap))), calc(var(--y) * (100% + var(--gap)))) scale(1.18); }
-  100% { transform: translate(calc(var(--x) * (100% + var(--gap))), calc(var(--y) * (100% + var(--gap)))) scale(1); }
+  0% { transform: translate3d(calc(var(--x) * (100% + var(--gap))), calc(var(--y) * (100% + var(--gap))), 0) scale(1); }
+  45% { transform: translate3d(calc(var(--x) * (100% + var(--gap))), calc(var(--y) * (100% + var(--gap))), 0) scale(1.16); }
+  100% { transform: translate3d(calc(var(--x) * (100% + var(--gap))), calc(var(--y) * (100% + var(--gap))), 0) scale(1); }
 }
 @keyframes ring {
   0% { opacity: 0.9; transform: scale(0.8); }
@@ -365,31 +375,32 @@ body {
 
 /* Tile palette: cyan -> purple -> pink -> white-hot */
 .tile[data-v="2"] {
-  color: var(--cyan-2);
-  background: rgba(0, 240, 255, 0.08);
-  border: 1px solid rgba(0, 240, 255, 0.55);
-  box-shadow: 0 0 8px rgba(0, 240, 255, 0.35), inset 0 0 10px rgba(0, 240, 255, 0.1);
+  color: var(--white);
+  background: linear-gradient(145deg, #0b2a4a, #0a1a3a);
+  border: 1px solid var(--cyan);
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.45), inset 0 0 12px rgba(0, 240, 255, 0.2);
+  text-shadow: 0 0 10px var(--cyan);
 }
 .tile[data-v="4"] {
-  color: var(--cyan-2);
-  background: rgba(0, 240, 255, 0.16);
-  border: 1px solid var(--cyan);
-  box-shadow: 0 0 12px rgba(0, 240, 255, 0.5), inset 0 0 12px rgba(0, 240, 255, 0.15);
-  text-shadow: 0 0 8px var(--cyan);
+  color: #04101c;
+  background: linear-gradient(145deg, #4df5ff, #00c8e0);
+  border: 1px solid #a8fbff;
+  box-shadow: 0 0 14px rgba(0, 240, 255, 0.7), inset 0 0 12px rgba(255, 255, 255, 0.25);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
 }
 .tile[data-v="8"] {
   color: var(--white);
-  background: linear-gradient(145deg, rgba(0, 240, 255, 0.35), rgba(155, 77, 255, 0.35));
-  border: 1px solid var(--cyan);
-  box-shadow: 0 0 14px rgba(0, 240, 255, 0.6);
-  text-shadow: 0 0 10px var(--cyan);
+  background: linear-gradient(145deg, #00a8ff, #5a2fff);
+  border: 1px solid var(--cyan-2);
+  box-shadow: 0 0 16px rgba(0, 200, 255, 0.7);
+  text-shadow: 0 2px 4px rgba(0, 0, 40, 0.7);
 }
 .tile[data-v="16"] {
   color: var(--white);
-  background: linear-gradient(145deg, rgba(155, 77, 255, 0.45), rgba(90, 40, 170, 0.6));
+  background: linear-gradient(145deg, #8a3dff, #5c22c8);
   border: 1px solid var(--purple-2);
-  box-shadow: 0 0 14px rgba(155, 77, 255, 0.7);
-  text-shadow: 0 0 10px var(--purple);
+  box-shadow: 0 0 16px rgba(155, 77, 255, 0.8);
+  text-shadow: 0 2px 4px rgba(20, 0, 50, 0.7);
 }
 .tile[data-v="32"] {
   color: var(--white);
@@ -449,11 +460,25 @@ body {
   box-shadow: 0 0 32px rgba(255, 255, 255, 0.9), 0 0 70px rgba(255, 43, 214, 0.9), 0 0 110px rgba(0, 240, 255, 0.6);
   text-shadow: 0 0 6px rgba(255, 255, 255, 1);
   font-size: calc(var(--board-size) * 0.062);
+}
+/* Pulse via an opacity-animated overlay instead of a filter so it stays off the paint path. */
+.tile[data-v="2048"]::before,
+.tile[data-v="4096"]::before,
+.tile[data-v="8192"]::before,
+.tile[data-v="16384"]::before,
+.tile[data-v="32768"]::before,
+.tile[data-v="65536"]::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: rgba(255, 255, 255, 0.35);
   animation: hot 1.6s ease-in-out infinite alternate;
+  pointer-events: none;
 }
 @keyframes hot {
-  from { filter: brightness(1); }
-  to { filter: brightness(1.25); }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 /* Overlay */
@@ -534,12 +559,12 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .rain, .title, .title::before, .title::after, .tile[data-v="2048"] { animation: none; }
+  .rain::before, .title, .title::before, .title::after, .tile::before { animation: none; }
   .tile { transition-duration: 1ms; }
 }
 
 @media (max-height: 640px) {
-  :root { --board-size: min(92vw, calc(100dvh - 215px)); }
+  :root { --board-size: min(92vw, calc(100svh - 215px)); }
   .title { font-size: 34px; }
   .tagline { display: none; }
   .app { gap: 8px; }
