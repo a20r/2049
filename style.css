@@ -224,15 +224,69 @@ body {
   justify-content: space-between;
   gap: 8px;
 }
-.hint {
+
+/* Goal line between the two buttons */
+.status-line {
   margin: 0;
   flex: 1;
+  min-width: 0;
   text-align: center;
   font-family: var(--font-mono);
   font-size: 10px;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.12em;
+  line-height: 1.35;
   color: var(--muted);
+  transition: color 0.2s ease;
 }
+.status-line.goal { color: var(--cyan); text-shadow: 0 0 8px rgba(0, 240, 255, 0.6); }
+.status-line.warn { color: var(--pink); text-shadow: 0 0 8px rgba(255, 43, 214, 0.7); }
+
+/* Mode switch */
+.seg {
+  width: 100%;
+  display: flex;
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: rgba(20, 8, 44, 0.6);
+}
+.seg-btn {
+  appearance: none;
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 4px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.seg-btn + .seg-btn { border-left: 1px solid var(--line); }
+.seg-btn[aria-checked="true"] {
+  color: var(--cyan);
+  background: rgba(0, 240, 255, 0.14);
+  text-shadow: 0 0 6px rgba(0, 240, 255, 0.8);
+}
+.seg-btn:active { background: rgba(0, 240, 255, 0.22); }
+/* Drawn inside the clipped control so the ring is never cut off. */
+.seg-btn:focus-visible {
+  outline: 2px solid var(--white);
+  outline-offset: -4px;
+}
+.seg-btn.daily[aria-checked="true"] {
+  color: var(--pink-2);
+  background: rgba(255, 43, 214, 0.14);
+  text-shadow: 0 0 6px rgba(255, 43, 214, 0.8);
+}
+.seg-btn:disabled { opacity: 0.35; cursor: default; }
 
 .btn {
   appearance: none;
@@ -246,6 +300,7 @@ body {
   border-radius: var(--radius);
   padding: 10px 14px;
   min-height: 44px;
+  white-space: nowrap;
   cursor: pointer;
   box-shadow: 0 0 10px rgba(0, 240, 255, 0.35), inset 0 0 8px rgba(0, 240, 255, 0.1);
   text-shadow: 0 0 6px rgba(0, 240, 255, 0.8);
@@ -538,6 +593,10 @@ body {
 /* Footer */
 .foot {
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
 }
 .foot-line {
   margin: 0;
@@ -546,6 +605,150 @@ body {
   letter-spacing: 0.22em;
   color: var(--muted);
 }
+
+/* ---------- Collatz mode ---------- */
+
+.board.collatz {
+  border-color: rgba(0, 240, 255, 0.5);
+  box-shadow:
+    0 0 0 1px rgba(255, 43, 214, 0.15),
+    0 0 24px rgba(0, 240, 255, 0.3),
+    0 0 60px rgba(155, 77, 255, 0.25),
+    inset 0 0 30px rgba(0, 0, 0, 0.6);
+}
+.board.collatz.stuck {
+  border-color: var(--pink);
+  box-shadow: 0 0 28px rgba(255, 43, 214, 0.7), inset 0 0 30px rgba(0, 0, 0, 0.6);
+}
+
+.board.collatz .tile {
+  flex-direction: column;
+  gap: 1px;
+  line-height: 1;
+}
+/* The caption sits on a translucent chip so it stays readable on every band. */
+.board.collatz .tile .cap {
+  position: relative;
+  z-index: 1;
+  font-family: var(--font-mono), system-ui, sans-serif;
+  font-weight: 400;
+  font-size: clamp(8px, calc(var(--board-size) * 0.031), 11px);
+  letter-spacing: 0.1em;
+  line-height: 1.2;
+  padding: 1px 5px;
+  border-radius: 4px;
+  color: var(--white);
+  background: rgba(10, 0, 30, 0.55);
+  text-shadow: none;
+}
+.board.collatz .tile[data-par="even"][data-band="1"] .cap,
+.board.collatz .tile[data-par="one"] .cap {
+  color: #04101c;
+  background: rgba(255, 255, 255, 0.5);
+}
+.board.collatz .tile[data-len="3"] { font-size: calc(var(--board-size) * 0.072); }
+.board.collatz .tile[data-len="4"] { font-size: calc(var(--board-size) * 0.06); }
+
+/* Even values: cyan family, darker as the value grows. */
+.board.collatz .tile[data-par="even"][data-band="0"] {
+  color: var(--white);
+  background: linear-gradient(145deg, #0b2a4a, #0a1a3a);
+  border: 1px solid var(--cyan);
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.45), inset 0 0 12px rgba(0, 240, 255, 0.2);
+  text-shadow: 0 0 10px var(--cyan);
+}
+.board.collatz .tile[data-par="even"][data-band="1"] {
+  color: #04101c;
+  background: linear-gradient(145deg, #4df5ff, #00c8e0);
+  border: 1px solid #a8fbff;
+  box-shadow: 0 0 14px rgba(0, 240, 255, 0.7), inset 0 0 12px rgba(255, 255, 255, 0.25);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+.board.collatz .tile[data-par="even"][data-band="2"] {
+  color: var(--white);
+  background: linear-gradient(145deg, #00a8ff, #2a6cff);
+  border: 1px solid var(--cyan-2);
+  box-shadow: 0 0 16px rgba(0, 200, 255, 0.7);
+  text-shadow: 0 2px 4px rgba(0, 0, 40, 0.7);
+}
+.board.collatz .tile[data-par="even"][data-band="3"] {
+  color: var(--white);
+  background: linear-gradient(145deg, #2f4bff, #5a2fff);
+  border: 1px solid var(--purple-2);
+  box-shadow: 0 0 18px rgba(90, 80, 255, 0.8);
+  text-shadow: 0 2px 4px rgba(0, 0, 40, 0.7);
+}
+
+/* Odd values: pink family, deeper as the value grows. */
+.board.collatz .tile[data-par="odd"][data-band="0"] {
+  color: var(--white);
+  background: linear-gradient(145deg, #3a0b3f, #250828);
+  border: 1px solid var(--pink);
+  box-shadow: 0 0 10px rgba(255, 43, 214, 0.5), inset 0 0 12px rgba(255, 43, 214, 0.2);
+  text-shadow: 0 0 10px var(--pink);
+}
+.board.collatz .tile[data-par="odd"][data-band="1"] {
+  color: var(--white);
+  background: linear-gradient(145deg, #ff2bd6, #ff5fe3);
+  border: 1px solid #ffb3f2;
+  box-shadow: 0 0 20px rgba(255, 43, 214, 0.85);
+  text-shadow: 0 2px 4px rgba(60, 0, 50, 0.7);
+}
+.board.collatz .tile[data-par="odd"][data-band="2"] {
+  color: var(--white);
+  background: linear-gradient(145deg, #d11bd0, #9b1fc8);
+  border: 1px solid var(--pink-2);
+  box-shadow: 0 0 18px rgba(210, 40, 220, 0.8);
+  text-shadow: 0 2px 4px rgba(40, 0, 50, 0.7);
+}
+.board.collatz .tile[data-par="odd"][data-band="3"] {
+  color: var(--white);
+  background: linear-gradient(145deg, #8a12b8, #5a0f8a);
+  border: 1px solid var(--purple-2);
+  box-shadow: 0 0 18px rgba(155, 40, 220, 0.8);
+  text-shadow: 0 2px 4px rgba(40, 0, 50, 0.7);
+}
+
+/* The 1: white hot, pair it to clear. */
+.board.collatz .tile[data-par="one"] {
+  color: #2a0040;
+  background: linear-gradient(145deg, #ffffff, #ffb3f2 45%, #7cf7ff);
+  border: 1px solid #ffffff;
+  box-shadow: 0 0 24px rgba(255, 255, 255, 0.8), 0 0 50px rgba(255, 43, 214, 0.7), 0 0 80px rgba(0, 240, 255, 0.5);
+  text-shadow: 0 0 6px rgba(255, 255, 255, 1);
+}
+.board.collatz .tile[data-par="one"]::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: rgba(255, 255, 255, 0.35);
+  animation: hot 1.6s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+/* Cleared pair: the surviving element bursts and fades in place. */
+.tile.cleared {
+  animation: burst 360ms ease-out forwards;
+  z-index: 4;
+  pointer-events: none;
+}
+.tile.cleared::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: inherit;
+  border: 2px solid #ffffff;
+  opacity: 0;
+  animation: ring 360ms ease-out;
+  pointer-events: none;
+}
+@keyframes burst {
+  0% { transform: translate3d(calc(var(--x) * (100% + var(--gap))), calc(var(--y) * (100% + var(--gap))), 0) scale(1); opacity: 1; }
+  100% { transform: translate3d(calc(var(--x) * (100% + var(--gap))), calc(var(--y) * (100% + var(--gap))), 0) scale(1.5); opacity: 0; }
+}
+
+.overlay-sub.wide { max-width: 34ch; line-height: 1.6; }
 
 .sr-only {
   position: absolute;
@@ -559,13 +762,23 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .rain::before, .title, .title::before, .title::after, .tile::before { animation: none; }
+  /* !important so these win over the more specific tile rules above. */
+  .rain::before, .title, .title::before, .title::after,
+  .tile::before, .tile::after, .tile.merged, .tile.new { animation: none !important; }
   .tile { transition-duration: 1ms; }
+  .tile.cleared { animation-duration: 1ms !important; }
 }
 
 @media (max-height: 640px) {
   :root { --board-size: min(92vw, calc(100svh - 215px)); }
+  /* In landscape the board is much narrower than the viewport; keep the HUD,
+     controls and footer at viewport width and let board-wrap centre the board. */
+  .app { width: min(92vw, 440px); gap: 8px; }
   .title { font-size: 34px; }
   .tagline { display: none; }
-  .app { gap: 8px; }
+  .foot-line { display: none; }
+}
+
+@media (max-height: 480px) {
+  .board.collatz .tile .cap { display: none; }
 }
