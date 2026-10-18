@@ -1,0 +1,10 @@
+[package]
+name = "nexus-engine"
+version = "0.2.0"
+edition = "2021"
+publish = false
+description = "Rules, solver and board generator for 2049's game modes. Pure Rust, no dependencies."
+
+[lib]
+
+[dependencies]
