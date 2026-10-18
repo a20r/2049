@@ -7,13 +7,13 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="description" content="2049: a Blade Runner themed 2048. Merge the tiles, reach 2048, become more human than human.">
+  <meta name="description" content="2049: a Blade Runner themed 2048, plus a Collatz mode where equal tiles follow 3n+1 or n/2 and the goal is to clear the board.">
   <title>2049</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=3">
 </head>
 <body>
   <div class="rain" aria-hidden="true"></div>
@@ -23,16 +23,16 @@
     <header class="hud">
       <div class="title-block">
         <h1 class="title" data-text="2049">2049</h1>
-        <p class="tagline">MORE HUMAN THAN HUMAN</p>
+        <p class="tagline" id="tagline">MORE HUMAN THAN HUMAN</p>
       </div>
       <div class="scores">
         <div class="score-box">
-          <span class="score-label">SCORE</span>
+          <span class="score-label" id="score-label">SCORE</span>
           <span class="score-value" id="score">0</span>
           <span class="score-delta" id="score-delta"></span>
         </div>
         <div class="score-box">
-          <span class="score-label">BEST</span>
+          <span class="score-label" id="best-label">BEST</span>
           <span class="score-value" id="best">0</span>
         </div>
       </div>
@@ -40,7 +40,10 @@
 
     <section class="controls">
       <button class="btn" id="undo" type="button" aria-label="Undo last move">UNDO</button>
-      <p class="hint">SWIPE OR USE ARROW KEYS</p>
+      <div class="seg" role="radiogroup" aria-label="Game mode">
+        <button class="seg-btn" id="mode-2048" type="button" role="radio" aria-checked="true">2048</button>
+        <button class="seg-btn" id="mode-collatz" type="button" role="radio" aria-checked="false">COLLATZ</button>
+      </div>
       <button class="btn btn-primary" id="new-game" type="button">NEW RUN</button>
     </section>
 
@@ -59,8 +62,9 @@
           <h2 class="overlay-title" id="overlay-title"></h2>
           <p class="overlay-sub" id="overlay-sub"></p>
           <div class="overlay-actions">
-            <button class="btn" id="overlay-continue" type="button" hidden>KEEP GOING</button>
-            <button class="btn btn-primary" id="overlay-restart" type="button">NEW RUN</button>
+            <button class="btn" id="overlay-secondary" type="button" hidden>KEEP GOING</button>
+            <button class="btn" id="overlay-alt" type="button" hidden>NEW BOARD</button>
+            <button class="btn btn-primary" id="overlay-primary" type="button">NEW RUN</button>
           </div>
         </div>
       </div>
@@ -68,10 +72,12 @@
 
     <footer class="foot">
       <p class="sr-only" id="status" aria-live="polite"></p>
+      <p class="status-line" id="status-line">SWIPE OR USE ARROW KEYS</p>
       <p class="foot-line">TYRELL CORP. &middot; NEXUS SERIES &middot; LOS ANGELES 2049</p>
     </footer>
   </main>
 
-  <script src="game.js"></script>
+  <script src="collatz.js?v=3"></script>
+  <script src="game.js?v=3"></script>
 </body>
 </html>
