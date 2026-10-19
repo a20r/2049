@@ -794,8 +794,11 @@ body {
 @media (max-height: 480px) and (min-width: 480px) {
   .foot-switches { flex-direction: row; }
   .foot-switches > .seg { width: auto; }
-  .seg-modes { flex: 3; }
-  .seg-theme { flex: 2; }
+  /* Four mode segments and three theme segments share the row at equal widths;
+     the narrower segments give their padding to the labels. */
+  .seg-modes { flex: 4; }
+  .seg-theme { flex: 3; }
+  .seg-btn { padding: 0 2px; }
 }
 
 /* ---------- Classic theme: a modern take on the original 2048 look ---------- */
@@ -982,3 +985,207 @@ body {
   letter-spacing: -0.01em;
 }
 [data-theme="classic"] .overlay-sub { color: var(--muted); font-weight: 500; letter-spacing: 0.06em; }
+
+/* ---------- Night theme: an ultra-dark mode for playing in bed with the lights off ----------
+   Pure black page and board so OLED pixels switch off. Tiles are near-black slabs whose numerals
+   carry the ramp (sand, amber, ember, russet, gold) with a 1px edge in the numeral hue that
+   strengthens with value. Odd Collatz tiles sit on plum with brick-rose numerals and a stronger
+   edge, so parity reads as outlined versus traced as well as by hue. No glow, flicker, glitch,
+   rain, scanlines, pulse or win flash. Every text colour stays at or below 0.30 relative
+   luminance and every fill at or below 0.012; every numeral measures 5:1 or better on its fill. */
+
+:root[data-theme="night"] {
+  --bg: #000000;
+  --bg-2: #000000;
+  --panel: #0d0b09;
+  --line: rgba(216, 150, 80, 0.16);
+  --cell: transparent;
+  --cell-line: rgba(255, 200, 140, 0.12);
+  /* Nothing is white here: anything the base sheet paints white lands on sand. The neon
+     tokens are remapped too, so a base rule this block misses resolves to something dim. */
+  --white: #9e9078;
+  --text: #9e9078;
+  --muted: #948770;
+  --pink: #bd7a88;
+  --pink-2: #bd7a88;
+  --purple: #4e2a40;
+  --purple-2: #6c4860;
+  --cyan: #bd873a;
+  --cyan-2: #9e9078;
+  --sand: #9e9078;
+  --amber: #bd873a;
+  --ember: #d8622c;
+  --gold: #b28e2c;
+  --rose: #bd7a88;
+}
+[data-theme="night"] body {
+  background: #000000;
+  color: var(--text);
+}
+[data-theme="night"] .rain,
+[data-theme="night"] .scanlines { display: none; }
+
+[data-theme="night"] .title {
+  color: #a86a34;
+  text-shadow: none;
+  animation: none;
+  font-weight: 700;
+}
+[data-theme="night"] .title::before,
+[data-theme="night"] .title::after { display: none; }
+[data-theme="night"] .tagline { color: var(--muted); text-shadow: none; }
+
+[data-theme="night"] .score-box {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  box-shadow: none;
+}
+[data-theme="night"] .score-label { color: var(--muted); }
+[data-theme="night"] .score-value { color: var(--amber); text-shadow: none; }
+[data-theme="night"] .score-delta { color: var(--amber); text-shadow: none; }
+
+[data-theme="night"] .status-line { color: var(--muted); }
+[data-theme="night"] .status-line.goal { color: var(--amber); text-shadow: none; }
+[data-theme="night"] .status-line.warn { color: var(--ember); text-shadow: none; }
+
+[data-theme="night"] .seg {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  box-shadow: none;
+}
+[data-theme="night"] .seg-btn { color: var(--muted); }
+[data-theme="night"] .seg-btn + .seg-btn { border-left-color: var(--line); }
+/* A checked segment is marked by a bar as well as its label colour, so the state does not rest on hue. */
+[data-theme="night"] .seg-btn[aria-checked="true"] {
+  color: var(--amber);
+  background: rgba(216, 130, 58, 0.12);
+  box-shadow: inset 0 -2px 0 var(--amber);
+  text-shadow: none;
+}
+[data-theme="night"] .seg-btn.daily[aria-checked="true"] {
+  color: var(--rose);
+  background: rgba(192, 112, 128, 0.12);
+  box-shadow: inset 0 -2px 0 var(--rose);
+  text-shadow: none;
+}
+/* Pressing darkens rather than lightens, so the label keeps its contrast while the finger is down. */
+[data-theme="night"] .seg-btn:active { background: rgba(0, 0, 0, 0.3); }
+/* The ring is inset; sand reads on the black track and on a checked (amber or rose) segment.
+   On a checked segment it sits 1px further in so it does not fuse with the bar. */
+[data-theme="night"] .seg-btn:focus-visible { outline-color: var(--sand); }
+[data-theme="night"] .seg-btn[aria-checked="true"]:focus-visible { outline-color: var(--sand); outline-offset: -5px; }
+
+[data-theme="night"] .btn {
+  color: var(--amber);
+  background: rgba(216, 130, 58, 0.06);
+  border: 1px solid rgba(216, 130, 58, 0.62);
+  box-shadow: none;
+  text-shadow: none;
+}
+[data-theme="night"] .btn:hover { background: rgba(216, 130, 58, 0.12); }
+[data-theme="night"] .btn-primary {
+  color: var(--gold);
+  border-color: rgba(216, 98, 44, 0.8);
+  background: rgba(216, 98, 44, 0.14);
+  box-shadow: none;
+  text-shadow: none;
+}
+[data-theme="night"] .btn-primary:hover { background: rgba(216, 98, 44, 0.22); }
+/* Browsers default to a blue focus ring; keep it warm and dim. */
+[data-theme="night"] .btn:focus-visible {
+  outline: 2px solid var(--sand);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+/* The board is black too: only a warm hairline grid marks the empty cells, so their pixels stay off. */
+[data-theme="night"] .board,
+[data-theme="night"] .board.collatz {
+  background: #000000;
+  border: 1px solid var(--line);
+  box-shadow: none;
+}
+[data-theme="night"] .board.collatz.stuck {
+  border-color: rgba(216, 98, 44, 0.7);
+  box-shadow: none;
+}
+[data-theme="night"] .cell {
+  background: var(--cell);
+  border: 1px solid var(--cell-line);
+  box-shadow: none;
+}
+
+/* 2048 tiles: near-black slabs. The numeral hue and a 1px edge carry the ramp:
+   grey-sand (2), sand (4), amber (8 to 64), ember (128 to 512), salmon (1024), gold (2048 and up).
+   The edge brightens with value as well, the one cue that survives colour-vision deficiency. */
+[data-theme="night"] .tile,
+[data-theme="night"] .tile[data-v] {
+  color: var(--sand);
+  background: #121212;
+  border: 1px solid #2f2c27;
+  box-shadow: none;
+  text-shadow: none;
+}
+[data-theme="night"] .tile[data-v="2"]    { color: #8f8a80; background: #121212; border-color: #2e2c2a; }
+[data-theme="night"] .tile[data-v="4"]    { color: #9d8c6a; background: #151311; border-color: #383228; }
+[data-theme="night"] .tile[data-v="8"]    { color: #a78f5a; background: #181410; border-color: #433926; }
+[data-theme="night"] .tile[data-v="16"]   { color: #b38e46; background: #1a1510; border-color: #503f23; }
+[data-theme="night"] .tile[data-v="32"]   { color: #bd8a36; background: #1c1510; border-color: #5c441f; }
+[data-theme="night"] .tile[data-v="64"]   { color: #c8822e; background: #1e1510; border-color: #734c1f; }
+[data-theme="night"] .tile[data-v="128"]  { color: #d2782c; background: #20150f; border-color: #874e20; }
+[data-theme="night"] .tile[data-v="256"]  { color: #dc6e2c; background: #22150e; border-color: #9d5022; }
+[data-theme="night"] .tile[data-v="512"]  { color: #e4622c; background: #24150d; border-color: #b24e24; }
+[data-theme="night"] .tile[data-v="1024"] { color: #df7558; background: #25170c; border-color: #be644a; }
+[data-theme="night"] .tile[data-v="2048"],
+[data-theme="night"] .tile[data-v="4096"],
+[data-theme="night"] .tile[data-v="8192"],
+[data-theme="night"] .tile[data-v="16384"],
+[data-theme="night"] .tile[data-v="32768"],
+[data-theme="night"] .tile[data-v="65536"] { color: #b28e2c; background: #27190c; border-color: #a48229; }
+/* No pulsing highlight and no bright flash: the gold edge is the only win marker. */
+[data-theme="night"] .tile[data-v="2048"]::before,
+[data-theme="night"] .tile[data-v="4096"]::before,
+[data-theme="night"] .tile[data-v="8192"]::before,
+[data-theme="night"] .tile[data-v="16384"]::before,
+[data-theme="night"] .tile[data-v="32768"]::before,
+[data-theme="night"] .tile[data-v="65536"]::before { display: none; animation: none; }
+/* Merge and clear rings stay, but as a faint amber hairline instead of white or the numeral colour. */
+[data-theme="night"] .tile.merged::after,
+[data-theme="night"] .tile.cleared::after { border-color: rgba(216, 130, 58, 0.3); }
+
+/* Collatz tiles: evens reuse four rungs of the ramp, odds sit on plum with brick-rose numerals
+   and a wider edge (parity as a shape, not only a hue), the 1 is gold like the 2048. */
+[data-theme="night"] .board.collatz .tile[data-par][data-band],
+[data-theme="night"] .board.collatz .tile[data-par="one"] {
+  border: 1px solid #2f2c27;
+  box-shadow: none;
+  text-shadow: none;
+}
+[data-theme="night"] .board.collatz .tile[data-par="even"][data-band="0"] { color: #9d8c6a; background: #151311; border-color: #383228; }
+[data-theme="night"] .board.collatz .tile[data-par="even"][data-band="1"] { color: #b38e46; background: #1a1510; border-color: #503f23; }
+[data-theme="night"] .board.collatz .tile[data-par="even"][data-band="2"] { color: #c8822e; background: #1e1510; border-color: #734c1f; }
+[data-theme="night"] .board.collatz .tile[data-par="even"][data-band="3"] { color: #dc6e2c; background: #22150e; border-color: #9d5022; }
+[data-theme="night"] .board.collatz .tile[data-par="odd"][data-band="0"] { color: #b08892; background: #171012; border-color: #5c464c; }
+[data-theme="night"] .board.collatz .tile[data-par="odd"][data-band="1"] { color: #ba837b; background: #1a1014; border-color: #724f4d; }
+[data-theme="night"] .board.collatz .tile[data-par="odd"][data-band="2"] { color: #c47878; background: #1d1016; border-color: #8a5456; }
+[data-theme="night"] .board.collatz .tile[data-par="odd"][data-band="3"] { color: #be7a88; background: #201118; border-color: #925d69; }
+[data-theme="night"] .board.collatz .tile[data-par="one"][data-band] { color: #b28e2c; background: #27190c; border-color: #a48229; }
+[data-theme="night"] .board.collatz .tile[data-par="odd"][data-band] { border-width: 2px; }
+[data-theme="night"] .board.collatz .tile[data-par="one"]::before { display: none; animation: none; }
+/* Captions: sand on a darker chip with a hairline, the same on every band so the chip never adds light. */
+[data-theme="night"] .board.collatz .tile .cap,
+[data-theme="night"] .board.collatz .tile[data-par="even"][data-band="1"] .cap,
+[data-theme="night"] .board.collatz .tile[data-par="one"] .cap {
+  color: var(--sand);
+  background: rgba(0, 0, 0, 0.45);
+  box-shadow: inset 0 0 0 1px rgba(255, 200, 140, 0.14);
+}
+
+[data-theme="night"] .overlay { background: rgba(0, 0, 0, 0.88); }
+[data-theme="night"] .overlay-kicker { color: var(--amber); text-shadow: none; }
+[data-theme="night"] .overlay-title,
+[data-theme="night"] .overlay.win .overlay-title { color: var(--sand); text-shadow: none; font-weight: 700; }
+[data-theme="night"] .overlay.win .overlay-title { color: var(--gold); }
+[data-theme="night"] .overlay-sub { color: var(--muted); }
+
+[data-theme="night"] .foot-line { color: var(--muted); }
