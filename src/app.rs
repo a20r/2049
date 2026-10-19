@@ -158,11 +158,13 @@ struct Pending {
 /// End-of-move work that runs when the slide timer fires or is flushed.
 type Finish = Box<dyn FnOnce(&mut App)>;
 
-/// Visual theme: the Blade Runner neon look, or a modern take on the original 2048.
+/// Visual theme: the Blade Runner neon look, a modern take on the original
+/// 2048, or an ultra-dark night mode for playing with the lights off.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Theme {
     Neon,
     Classic,
+    Night,
 }
 
 impl Theme {
@@ -170,13 +172,14 @@ impl Theme {
         match self {
             Theme::Neon => "neon",
             Theme::Classic => "classic",
+            Theme::Night => "night",
         }
     }
     fn from_key(s: &str) -> Theme {
-        if s == "classic" {
-            Theme::Classic
-        } else {
-            Theme::Neon
+        match s {
+            "classic" => Theme::Classic,
+            "night" => Theme::Night,
+            _ => Theme::Neon,
         }
     }
     /// Browser chrome colour (the theme-color meta) for each theme.
@@ -184,17 +187,27 @@ impl Theme {
         match self {
             Theme::Neon => "#07020f",
             Theme::Classic => "#faf8ef",
+            Theme::Night => "#000000",
         }
     }
-    fn other(self) -> Theme {
+    /// The theme the T key cycles to, in switch order.
+    fn next(self) -> Theme {
         match self {
             Theme::Neon => Theme::Classic,
-            Theme::Classic => Theme::Neon,
+            Theme::Classic => Theme::Night,
+            Theme::Night => Theme::Neon,
+        }
+    }
+    fn label(self) -> &'static str {
+        match self {
+            Theme::Neon => "Neon theme.",
+            Theme::Classic => "Classic theme.",
+            Theme::Night => "Night theme.",
         }
     }
 }
 
-const THEMES: [Theme; 2] = [Theme::Neon, Theme::Classic];
+const THEMES: [Theme; 3] = [Theme::Neon, Theme::Classic, Theme::Night];
 
 struct Els {
     board: HtmlElement,
@@ -210,7 +223,7 @@ struct Els {
     undo: HtmlButtonElement,
     new_game: HtmlButtonElement,
     mode_btns: [HtmlButtonElement; 4],
-    theme_btns: [HtmlButtonElement; 2],
+    theme_btns: [HtmlButtonElement; 3],
     overlay: HtmlElement,
     kicker: HtmlElement,
     title: HtmlElement,
@@ -280,7 +293,11 @@ pub fn boot() {
             dom::btn("mode-daily"),
             dom::btn("mode-endless"),
         ],
-        theme_btns: [dom::btn("theme-neon"), dom::btn("theme-classic")],
+        theme_btns: [
+            dom::btn("theme-neon"),
+            dom::btn("theme-classic"),
+            dom::btn("theme-night"),
+        ],
         overlay: dom::el("overlay"),
         kicker: dom::el("overlay-kicker"),
         title: dom::el("overlay-title"),
@@ -1851,11 +1868,7 @@ impl App {
             );
         }
         if !boot {
-            self.announce(if t == Theme::Classic {
-                "Classic theme."
-            } else {
-                "Neon theme."
-            });
+            self.announce(t.label());
         }
     }
 
@@ -1973,7 +1986,7 @@ impl App {
             // Key repeat would strobe the page while T is held.
             (None, "t" | "T") if !e.repeat() => {
                 e.prevent_default();
-                self.set_theme(self.theme.other(), false);
+                self.set_theme(self.theme.next(), false);
             }
             _ => {}
         }

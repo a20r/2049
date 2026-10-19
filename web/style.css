@@ -794,8 +794,9 @@ body {
 @media (max-height: 480px) and (min-width: 480px) {
   .foot-switches { flex-direction: row; }
   .foot-switches > .seg { width: auto; }
-  .seg-modes { flex: 3; }
-  .seg-theme { flex: 2; }
+  /* Four mode segments and three theme segments share the row at equal widths. */
+  .seg-modes { flex: 4; }
+  .seg-theme { flex: 3; }
 }
 
 /* ---------- Classic theme: a modern take on the original 2048 look ---------- */

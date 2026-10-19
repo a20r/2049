@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
   <meta name="theme-color" content="#07020f">
   <!-- Applies the saved theme before first paint; the game owns it from then on. -->
-  <script>try{document.documentElement.setAttribute('data-theme',localStorage.getItem('nexus2049.theme')==='classic'?'classic':'neon')}catch(e){}</script>
+  <script>try{var t=localStorage.getItem('nexus2049.theme');document.documentElement.setAttribute('data-theme',t==='classic'||t==='night'?t:'neon')}catch(e){}</script>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="mobile-web-app-capable" content="yes">
@@ -15,8 +15,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=6">
-  <link rel="modulepreload" href="pkg/nexus2049.js?v=6">
+  <link rel="stylesheet" href="style.css?v=7">
+  <link rel="modulepreload" href="pkg/nexus2049.js?v=7">
 </head>
 <body>
   <div class="rain" aria-hidden="true"></div>
@@ -82,6 +82,7 @@
         <div class="seg seg-theme" role="radiogroup" aria-label="Theme">
           <button class="seg-btn" id="theme-neon" type="button" role="radio" aria-checked="true">NEON</button>
           <button class="seg-btn" id="theme-classic" type="button" role="radio" aria-checked="false">CLASSIC</button>
+          <button class="seg-btn" id="theme-night" type="button" role="radio" aria-checked="false">NIGHT</button>
         </div>
       </div>
       <p class="foot-line">TYRELL CORP. &middot; NEXUS SERIES &middot; LOS ANGELES 2049</p>
@@ -89,7 +90,7 @@
   </main>
 
   <script type="module">
-    import init, * as nexus from './pkg/nexus2049.js?v=6';
+    import init, * as nexus from './pkg/nexus2049.js?v=7';
     window.Nexus = nexus;
     init().catch(function (e) { console.error('2049 failed to start', e); });
   </script>
