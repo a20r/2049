@@ -23,7 +23,7 @@ Four modes, switched with the control under the board:
   board clear for as long as you can; the score is tiles removed. `Z` undoes
   one move, `R` starts a new run.
 
-Three themes, switched with the control under the modes (`T` cycles them):
+Three themes, switched with the second control under the board (`T` cycles them):
 
 - **Neon**: the Blade Runner look, pink, purple and cyan on near-black.
 - **Classic**: a modern take on the original 2048, cream page and tan tiles.

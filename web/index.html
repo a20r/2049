@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
   <meta name="theme-color" content="#07020f">
   <!-- Applies the saved theme before first paint; the game owns it from then on. -->
-  <script>try{var t=localStorage.getItem('nexus2049.theme');document.documentElement.setAttribute('data-theme',t==='classic'||t==='night'?t:'neon')}catch(e){}</script>
+  <script>try{let t=localStorage.getItem('nexus2049.theme');document.documentElement.setAttribute('data-theme',t==='classic'||t==='night'?t:'neon')}catch(e){}</script>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="mobile-web-app-capable" content="yes">
@@ -92,7 +92,8 @@
   <script type="module">
     import init, * as nexus from './pkg/nexus2049.js?v=7';
     window.Nexus = nexus;
-    init().catch(function (e) { console.error('2049 failed to start', e); });
+    // The module path carries the same version as the glue so a cached binary never pairs with new glue.
+    init({ module_or_path: './pkg/nexus2049_bg.wasm?v=7' }).catch(function (e) { console.error('2049 failed to start', e); });
   </script>
 </body>
 </html>

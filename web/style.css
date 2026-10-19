@@ -794,9 +794,11 @@ body {
 @media (max-height: 480px) and (min-width: 480px) {
   .foot-switches { flex-direction: row; }
   .foot-switches > .seg { width: auto; }
-  /* Four mode segments and three theme segments share the row at equal widths. */
+  /* Four mode segments and three theme segments share the row at equal widths;
+     the narrower segments give their padding to the labels. */
   .seg-modes { flex: 4; }
   .seg-theme { flex: 3; }
+  .seg-btn { padding: 0 2px; }
 }
 
 /* ---------- Classic theme: a modern take on the original 2048 look ---------- */
@@ -1068,9 +1070,10 @@ body {
 }
 /* Pressing darkens rather than lightens, so the label keeps its contrast while the finger is down. */
 [data-theme="night"] .seg-btn:active { background: rgba(0, 0, 0, 0.3); }
-/* The ring is inset; sand reads on the black track and on a checked (amber or rose) segment. */
-[data-theme="night"] .seg-btn:focus-visible,
-[data-theme="night"] .seg-btn[aria-checked="true"]:focus-visible { outline-color: var(--sand); }
+/* The ring is inset; sand reads on the black track and on a checked (amber or rose) segment.
+   On a checked segment it sits 1px further in so it does not fuse with the bar. */
+[data-theme="night"] .seg-btn:focus-visible { outline-color: var(--sand); }
+[data-theme="night"] .seg-btn[aria-checked="true"]:focus-visible { outline-color: var(--sand); outline-offset: -5px; }
 
 [data-theme="night"] .btn {
   color: var(--amber);
@@ -1113,7 +1116,8 @@ body {
 }
 
 /* 2048 tiles: near-black slabs. The numeral hue and a 1px edge carry the ramp:
-   sand (2, 4), amber (8 to 64), ember (128 to 512), russet (1024), gold (2048 and up). */
+   grey-sand (2), sand (4), amber (8 to 64), ember (128 to 512), salmon (1024), gold (2048 and up).
+   The edge brightens with value as well, the one cue that survives colour-vision deficiency. */
 [data-theme="night"] .tile,
 [data-theme="night"] .tile[data-v] {
   color: var(--sand);
@@ -1122,22 +1126,22 @@ body {
   box-shadow: none;
   text-shadow: none;
 }
-[data-theme="night"] .tile[data-v="2"]    { color: #958870; background: #121212; border-color: #2f2c27; }
+[data-theme="night"] .tile[data-v="2"]    { color: #8f8a80; background: #121212; border-color: #2e2c2a; }
 [data-theme="night"] .tile[data-v="4"]    { color: #9d8c6a; background: #151311; border-color: #383228; }
 [data-theme="night"] .tile[data-v="8"]    { color: #a78f5a; background: #181410; border-color: #433926; }
 [data-theme="night"] .tile[data-v="16"]   { color: #b38e46; background: #1a1510; border-color: #503f23; }
 [data-theme="night"] .tile[data-v="32"]   { color: #bd8a36; background: #1c1510; border-color: #5c441f; }
-[data-theme="night"] .tile[data-v="64"]   { color: #c8822e; background: #1e1510; border-color: #6b461e; }
-[data-theme="night"] .tile[data-v="128"]  { color: #d2782c; background: #20150f; border-color: #79471e; }
-[data-theme="night"] .tile[data-v="256"]  { color: #dc6e2c; background: #22150e; border-color: #88461f; }
-[data-theme="night"] .tile[data-v="512"]  { color: #e4622c; background: #24150d; border-color: #974320; }
-[data-theme="night"] .tile[data-v="1024"] { color: #c47c2a; background: #25170c; border-color: #88561f; }
+[data-theme="night"] .tile[data-v="64"]   { color: #c8822e; background: #1e1510; border-color: #734c1f; }
+[data-theme="night"] .tile[data-v="128"]  { color: #d2782c; background: #20150f; border-color: #874e20; }
+[data-theme="night"] .tile[data-v="256"]  { color: #dc6e2c; background: #22150e; border-color: #9d5022; }
+[data-theme="night"] .tile[data-v="512"]  { color: #e4622c; background: #24150d; border-color: #b24e24; }
+[data-theme="night"] .tile[data-v="1024"] { color: #df7558; background: #25170c; border-color: #be644a; }
 [data-theme="night"] .tile[data-v="2048"],
 [data-theme="night"] .tile[data-v="4096"],
 [data-theme="night"] .tile[data-v="8192"],
 [data-theme="night"] .tile[data-v="16384"],
 [data-theme="night"] .tile[data-v="32768"],
-[data-theme="night"] .tile[data-v="65536"] { color: #b28e2c; background: #27190c; border-color: #836621; }
+[data-theme="night"] .tile[data-v="65536"] { color: #b28e2c; background: #27190c; border-color: #a48229; }
 /* No pulsing highlight and no bright flash: the gold edge is the only win marker. */
 [data-theme="night"] .tile[data-v="2048"]::before,
 [data-theme="night"] .tile[data-v="4096"]::before,
@@ -1150,7 +1154,7 @@ body {
 [data-theme="night"] .tile.cleared::after { border-color: rgba(216, 130, 58, 0.3); }
 
 /* Collatz tiles: evens reuse four rungs of the ramp, odds sit on plum with brick-rose numerals
-   and a stronger edge, the 1 is gold like the 2048. */
+   and a wider edge (parity as a shape, not only a hue), the 1 is gold like the 2048. */
 [data-theme="night"] .board.collatz .tile[data-par][data-band],
 [data-theme="night"] .board.collatz .tile[data-par="one"] {
   border: 1px solid #2f2c27;
@@ -1159,13 +1163,14 @@ body {
 }
 [data-theme="night"] .board.collatz .tile[data-par="even"][data-band="0"] { color: #9d8c6a; background: #151311; border-color: #383228; }
 [data-theme="night"] .board.collatz .tile[data-par="even"][data-band="1"] { color: #b38e46; background: #1a1510; border-color: #503f23; }
-[data-theme="night"] .board.collatz .tile[data-par="even"][data-band="2"] { color: #c8822e; background: #1e1510; border-color: #6b461e; }
-[data-theme="night"] .board.collatz .tile[data-par="even"][data-band="3"] { color: #dc6e2c; background: #22150e; border-color: #88461f; }
+[data-theme="night"] .board.collatz .tile[data-par="even"][data-band="2"] { color: #c8822e; background: #1e1510; border-color: #734c1f; }
+[data-theme="night"] .board.collatz .tile[data-par="even"][data-band="3"] { color: #dc6e2c; background: #22150e; border-color: #9d5022; }
 [data-theme="night"] .board.collatz .tile[data-par="odd"][data-band="0"] { color: #b08892; background: #171012; border-color: #5c464c; }
 [data-theme="night"] .board.collatz .tile[data-par="odd"][data-band="1"] { color: #ba837b; background: #1a1014; border-color: #724f4d; }
 [data-theme="night"] .board.collatz .tile[data-par="odd"][data-band="2"] { color: #c47878; background: #1d1016; border-color: #8a5456; }
 [data-theme="night"] .board.collatz .tile[data-par="odd"][data-band="3"] { color: #be7a88; background: #201118; border-color: #925d69; }
-[data-theme="night"] .board.collatz .tile[data-par="one"] { color: #b28e2c; background: #27190c; border-color: #836621; }
+[data-theme="night"] .board.collatz .tile[data-par="one"][data-band] { color: #b28e2c; background: #27190c; border-color: #a48229; }
+[data-theme="night"] .board.collatz .tile[data-par="odd"][data-band] { border-width: 2px; }
 [data-theme="night"] .board.collatz .tile[data-par="one"]::before { display: none; animation: none; }
 /* Captions: sand on a darker chip with a hairline, the same on every band so the chip never adds light. */
 [data-theme="night"] .board.collatz .tile .cap,
