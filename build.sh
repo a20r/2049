@@ -17,4 +17,9 @@ rm -rf dist
 mkdir -p dist/pkg
 cp -r web/. dist/
 wasm-bindgen --target web --no-typescript --out-dir dist/pkg "$WASM"
+
+# Stamp the service worker so every build installs into its own cache.
+BUILD="$(git rev-parse --short HEAD 2>/dev/null || date -u +%Y%m%d%H%M%S)-$(date -u +%s)"
+sed -i.bak "s/__BUILD__/$BUILD/" dist/sw.js && rm -f dist/sw.js.bak
+grep -q "$BUILD" dist/sw.js
 ls -la dist/pkg
