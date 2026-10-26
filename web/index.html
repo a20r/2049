@@ -12,11 +12,12 @@
   <meta name="description" content="2049: a Blade Runner themed 2048, plus Collatz, daily and endless modes where equal tiles follow 3n+1 or n/2. Rust and WebAssembly.">
   <title>2049</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=7">
-  <link rel="modulepreload" href="pkg/nexus2049.js?v=7">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="preload" href="fonts/orbitron.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/share-tech-mono.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="style.css?v=8">
+  <link rel="modulepreload" href="pkg/nexus2049.js?v=8">
 </head>
 <body>
   <div class="rain" aria-hidden="true"></div>
@@ -90,10 +91,16 @@
   </main>
 
   <script type="module">
-    import init, * as nexus from './pkg/nexus2049.js?v=7';
+    import init, * as nexus from './pkg/nexus2049.js?v=8';
     window.Nexus = nexus;
     // The module path carries the same version as the glue so a cached binary never pairs with new glue.
-    init({ module_or_path: './pkg/nexus2049_bg.wasm?v=7' }).catch(function (e) { console.error('2049 failed to start', e); });
+    init({ module_or_path: './pkg/nexus2049_bg.wasm?v=8' }).catch(function (e) { console.error('2049 failed to start', e); });
+    // The service worker precaches the whole game, so later visits need no network at all.
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('./sw.js').catch(function (e) { console.warn('offline cache unavailable', e); });
+      });
+    }
   </script>
 </body>
 </html>

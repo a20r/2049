@@ -32,6 +32,14 @@ Three themes, switched with the second control under the board (`T` cycles them)
 
 The choice is remembered and applied before the first paint.
 
+## Offline
+
+The site is a progressive web app. A service worker precaches the page, the
+stylesheet, the fonts and the WebAssembly module on the first visit, so later
+visits open and play with no network at all. Add it to the home screen for a
+full-screen app. A new deploy is picked up on the next online visit and takes
+effect the visit after that.
+
 ## Layout
 
 - `engine/`: the rules, exact solver, board generator and daily seeding as a
